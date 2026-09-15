@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using carniceriaApp.Data;
 
@@ -11,9 +12,11 @@ using carniceriaApp.Data;
 namespace carniceriaApp.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260914221258_QuitarUnidadMedidaProducto")]
+    partial class QuitarUnidadMedidaProducto
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -262,16 +265,13 @@ namespace carniceriaApp.Migrations
                         .HasColumnType("datetime(6)");
 
                     b.Property<decimal>("TotalGeneral")
-                        .HasPrecision(10, 2)
-                        .HasColumnType("decimal(10,2)");
+                        .HasColumnType("decimal(65,30)");
 
                     b.Property<decimal>("TotalVentasPresenciales")
-                        .HasPrecision(10, 2)
-                        .HasColumnType("decimal(10,2)");
+                        .HasColumnType("decimal(65,30)");
 
                     b.Property<decimal>("TotalVentasSistema")
-                        .HasPrecision(10, 2)
-                        .HasColumnType("decimal(10,2)");
+                        .HasColumnType("decimal(65,30)");
 
                     b.Property<string>("UsuarioId")
                         .IsRequired()
@@ -291,19 +291,16 @@ namespace carniceriaApp.Migrations
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<decimal>("Cantidad")
-                        .HasPrecision(10, 2)
-                        .HasColumnType("decimal(10,2)");
+                        .HasColumnType("decimal(65,30)");
 
                     b.Property<decimal>("PrecioUnitario")
-                        .HasPrecision(10, 2)
-                        .HasColumnType("decimal(10,2)");
+                        .HasColumnType("decimal(65,30)");
 
                     b.Property<int>("ProductoId")
                         .HasColumnType("int");
 
                     b.Property<decimal>("Subtotal")
-                        .HasPrecision(10, 2)
-                        .HasColumnType("decimal(10,2)");
+                        .HasColumnType("decimal(65,30)");
 
                     b.Property<int>("VentaId")
                         .HasColumnType("int");
@@ -373,12 +370,10 @@ namespace carniceriaApp.Migrations
                         .HasColumnType("datetime(6)");
 
                     b.Property<decimal>("PrecioAnterior")
-                        .HasPrecision(10, 2)
-                        .HasColumnType("decimal(10,2)");
+                        .HasColumnType("decimal(65,30)");
 
                     b.Property<decimal>("PrecioNuevo")
-                        .HasPrecision(10, 2)
-                        .HasColumnType("decimal(10,2)");
+                        .HasColumnType("decimal(65,30)");
 
                     b.Property<int>("ProductoId")
                         .HasColumnType("int");
@@ -414,8 +409,7 @@ namespace carniceriaApp.Migrations
                         .HasColumnType("longtext");
 
                     b.Property<decimal>("PrecioActual")
-                        .HasPrecision(10, 2)
-                        .HasColumnType("decimal(10,2)");
+                        .HasColumnType("decimal(65,30)");
 
                     b.HasKey("Id");
 
@@ -449,8 +443,7 @@ namespace carniceriaApp.Migrations
                         .HasColumnType("int");
 
                     b.Property<decimal>("Total")
-                        .HasPrecision(10, 2)
-                        .HasColumnType("decimal(10,2)");
+                        .HasColumnType("decimal(65,30)");
 
                     b.Property<string>("UsuarioCreadorId")
                         .IsRequired()

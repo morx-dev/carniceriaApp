@@ -1,0 +1,85 @@
+@model List<carniceriaApp.Models.Producto>
+@{
+    ViewData["Title"] = "Productos";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2>Productos</h2>
+    <a asp-action="Crear" class="btn btn-primary">+ Nuevo producto</a>
+</div>
+
+@if (TempData["Mensaje"] != null)
+{
+    <div class="alert alert-success">@TempData["Mensaje"]</div>
+}
+
+<div class="row g-2 mb-3">
+    <div class="col-md-5">
+        <input type="text" id="inputBusqueda" class="form-control"
+               placeholder="Buscar por nombre..."
+               value="@ViewBag.BusquedaActual" autocomplete="off" autofocus />
+    </div>
+    <div class="col-md-4">
+        <select id="selectCategoria" class="asp-items form-select">
+            <option value="">Todas las categorías</option>
+            @foreach (var cat in Enum.GetValues(typeof(carniceriaApp.Models.CategoriaProducto)))
+            {
+                if (ViewBag.CategoriaActual != null && (carniceriaApp.Models.CategoriaProducto)ViewBag.CategoriaActual == (carniceriaApp.Models.CategoriaProducto)cat)
+                {
+                    <option value="@cat" selected>@cat</option>
+                }
+                else
+                {
+                    <option value="@cat">@cat</option>
+                }
+            }
+        </select>
+    </div>
+</div>
+
+<!-- Contenedor donde se actualiza la tabla dinámicamente -->
+<div id="contenedorTabla">
+    <partial name="_TablaProductos" model="Model" />
+</div>
+
+@section Scripts {
+    <script>
+        const inputBusqueda = document.getElementById('inputBusqueda');
+        const selectCategoria = document.getElementById('selectCategoria');
+        const contenedorTabla = document.getElementById('contenedorTabla');
+
+        let timeout = null;
+
+        function realizarBusqueda() {
+            const busqueda = inputBusqueda.value;
+            const categoria = selectCategoria.value;
+
+            // Construir la URL con los parámetros de búsqueda
+            const url = `@Url.Action("Index", "Productos")?busqueda=${encodeURIComponent(busqueda)}&categoria=${encodeURIComponent(categoria)}`;
+
+            fetch(url, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.text())
+            .then(html => {
+                contenedorTabla.innerHTML = html;
+            })
+            .catch(error => console.error('Error al filtrar:', error));
+        }
+
+        // Evento al escribir (con un pequeño delay para optimizar, sin perder el focus)
+        inputBusqueda.addEventListener('input', function () {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => {
+                realizarBusqueda();
+            }, 300); // 300ms de respuesta fluida en tiempo real
+        });
+
+        // Evento al cambiar la categoría del select
+        selectCategoria.addEventListener('change', function () {
+            realizarBusqueda();
+        });
+    </script>
+}

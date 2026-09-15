@@ -1,0 +1,27 @@
+@model carniceriaApp.Models.Producto
+@{
+    ViewData["Title"] = "Desactivar producto";
+}
+
+<h2>¿Desactivar este producto?</h2>
+
+<div class="alert alert-warning">
+    No se elimina físicamente — solo se marca como inactivo, para no romper el historial de ventas y precios ya registrados.
+</div>
+
+<dl class="row">
+    <dt class="col-sm-3">Nombre</dt>
+    <dd class="col-sm-9">@Model.Nombre</dd>
+
+    <dt class="col-sm-3">Categoría</dt>
+    <dd class="col-sm-9">@Model.Categoria</dd>
+
+    <dt class="col-sm-3">Precio actual</dt>
+    <dd class="col-sm-9">Q@(Model.PrecioActual.ToString("N2"))</dd>
+</dl>
+
+<form asp-action="Eliminar" method="post">
+    <input type="hidden" asp-for="Id" />
+    <button type="submit" class="btn btn-danger">Sí, desactivar</button>
+    <a asp-action="Index" class="btn btn-secondary">Cancelar</a>
+</form>

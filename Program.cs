@@ -49,12 +49,16 @@ app.UseAuthorization();
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}");
+    pattern: "{controller=Cuenta}/{action=Login}/{id?}");
 
 // Seed de roles y usuario Administrador inicial
 using (var scope = app.Services.CreateScope())
 {
-    await DbSeeder.SeedRolesYAdminAsync(scope.ServiceProvider);
+    var services = scope.ServiceProvider;
+    var context = services.GetRequiredService<ApplicationDbContext>();
+
+    await DbSeeder.SeedRolesYAdminAsync(services);
+    await DbSeeder.SeedProductosAsync(context);
 }
 
 app.Run();

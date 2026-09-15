@@ -22,6 +22,50 @@ public class ApplicationDbContext : IdentityDbContext<IdentityUser>
     {
         base.OnModelCreating(builder);
 
+        builder.Entity<Producto>()
+            .Property(p => p.Categoria)
+            .HasConversion<string>();
+
+        builder.Entity<Producto>()
+            .Property(p => p.PrecioActual)
+            .HasPrecision(10, 2);
+
+        builder.Entity<HistorialPrecio>()
+            .Property(h => h.PrecioAnterior)
+            .HasPrecision(10, 2);
+
+        builder.Entity<HistorialPrecio>()
+            .Property(h => h.PrecioNuevo)
+            .HasPrecision(10, 2);
+
+        builder.Entity<DetalleVenta>()
+            .Property(d => d.PrecioUnitario)
+            .HasPrecision(10, 2);
+
+        builder.Entity<DetalleVenta>()
+            .Property(d => d.Subtotal)
+            .HasPrecision(10, 2);
+
+        builder.Entity<DetalleVenta>()
+            .Property(d => d.Cantidad)
+            .HasPrecision(10, 2);
+
+        builder.Entity<Venta>()
+            .Property(v => v.Total)
+            .HasPrecision(10, 2);
+
+        builder.Entity<CuadreDiario>()
+            .Property(c => c.TotalVentasPresenciales)
+            .HasPrecision(10, 2);
+
+        builder.Entity<CuadreDiario>()
+            .Property(c => c.TotalVentasSistema)
+            .HasPrecision(10, 2);
+
+        builder.Entity<CuadreDiario>()
+            .Property(c => c.TotalGeneral)
+            .HasPrecision(10, 2);
+
         builder.Entity<Venta>()
             .HasOne(v => v.Cliente)
             .WithMany()

@@ -1,12 +1,28 @@
-// Models/Producto.cs
+using System.ComponentModel.DataAnnotations;
+
 namespace carniceriaApp.Models;
+
+public enum CategoriaProducto
+{
+    Res,
+    Cerdo,
+    Pollo,
+    Embutidos,
+    Menudos
+}
 
 public class Producto
 {
     public int Id { get; set; }
+
+    [Required(ErrorMessage = "El nombre del producto es obligatorio.")]
+    [StringLength(100, ErrorMessage = "El nombre no puede superar los 100 caracteres.")]
     public string Nombre { get; set; } = string.Empty;
-    public string? Categoria { get; set; }
-    public string UnidadMedida { get; set; } = "Libra";
+
+    public CategoriaProducto Categoria { get; set; }
+
+    [Range(0.01, 1000000.00, ErrorMessage = "El precio actual debe ser mayor a cero.")]
     public decimal PrecioActual { get; set; }
+
     public bool Activo { get; set; } = true;
 }

@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   app:
     build: .
@@ -9,8 +7,10 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://+:8080
+      - ConnectionStrings__DefaultConnection=server=mysql_db;port=3306;database=carniceria_db;user=root;password=TU_PASSWORD_SEGURO;
     depends_on:
-      - mysql_db
+      mysql_db:
+        condition: service_healthy
     networks:
       - carniceria_net
 
@@ -27,6 +27,11 @@ services:
       - carniceria_mysql_data:/var/lib/mysql
     networks:
       - carniceria_net
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-pTU_PASSWORD_SEGURO"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
 volumes:
   carniceria_mysql_data:
