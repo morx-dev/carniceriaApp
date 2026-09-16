@@ -1,0 +1,42 @@
+@model carniceriaApp.Models.Usuario
+@{
+    ViewData["Title"] = "Editar usuario";
+}
+
+<h2>Editar usuario</h2>
+
+<div class="row">
+    <div class="col-md-6">
+        <form asp-action="Editar" asp-route-id="@Model.Id" method="post">
+            <div class="mb-3">
+                <label class="form-label">Correo (no editable)</label>
+                <input value="@Model.Email" class="form-control" disabled />
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="NombreCompleto" class="form-label"></label>
+                <input asp-for="NombreCompleto" class="form-control" />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Rol</label>
+                <select name="nuevoRol" class="form-select">
+                    @foreach (var rol in (List<string?>)ViewBag.Roles)
+                    {
+                        if (rol == (string)ViewBag.RolActual)
+                        {
+                            <option value="@rol" selected>@rol</option>
+                        }
+                        else
+                        {
+                            <option value="@rol">@rol</option>
+                        }
+                    }
+                </select>
+            </div>
+
+            <button type="submit" class="btn btn-primary">Guardar cambios</button>
+            <a asp-action="Index" class="btn btn-secondary">Cancelar</a>
+        </form>
+    </div>
+</div>

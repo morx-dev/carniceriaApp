@@ -1,0 +1,63 @@
+@model List<(carniceriaApp.Models.Usuario Usuario, string Rol)>
+
+<div class="table-responsive">
+    <table class="table table-striped table-hover align-middle bg-white rounded shadow-sm" id="tablaUsuarios">
+        <thead>
+            <tr>
+                <th>Usuario</th>
+                <th class="d-none d-md-table-cell">Correo</th>
+                <th>Rol</th>
+                <th>Estado</th>
+                <th class="text-end" style="width: 140px;">Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                <tr class="@(item.Usuario.Activo ? "" : "table-secondary text-muted")">
+                    <td>
+                        <div class="fw-bold">@item.Usuario.NombreCompleto</div>
+                        <div class="small text-muted d-md-none text-break">@item.Usuario.Email</div>
+                    </td>
+                    <td class="d-none d-md-table-cell text-break">@item.Usuario.Email</td>
+                    <td>
+                        <!-- Rol unificado con un estilo sobrio y limpio -->
+                        <span class="badge bg-light text-dark border">@item.Rol</span>
+                    </td>
+                    <td>
+                        @if (item.Usuario.Activo)
+                        {
+                            <span class="badge bg-success">Activo</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-secondary">Inactivo</span>
+                        }
+                    </td>
+                    <td class="text-end">
+                        <div class="d-inline-flex gap-1">
+                            <a asp-action="Editar" asp-route-id="@item.Usuario.Id" class="btn btn-sm btn-outline-primary" title="Editar">
+                                Editar
+                            </a>
+                            <form asp-action="CambiarEstado" asp-route-id="@item.Usuario.Id" method="post" class="d-inline">
+                                @if (item.Usuario.Activo)
+                                {
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Desactivar">Desactivar</button>
+                                }
+                                else
+                                {
+                                    <button type="submit" class="btn btn-sm btn-outline-success" title="Activar">Activar</button>
+                                }
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+@if (!Model.Any())
+{
+    <p class="text-muted text-center py-3" id="noUsuariosMensaje">No se encontraron usuarios con esos filtros.</p>
+}

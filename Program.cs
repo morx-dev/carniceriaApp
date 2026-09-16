@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using carniceriaApp.Data;
+using carniceriaApp.Models;
+using carniceriaApp; // <-- Asegura que reconozca el factory creado en la raíz
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -12,7 +14,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
 
 // Identity con roles (sin Razor Pages, para mantenerlo 100% MVC)
-builder.Services.AddIdentity<IdentityUser, IdentityRole>(options =>
+builder.Services.AddIdentity<Usuario, IdentityRole>(options =>
     {
         options.Password.RequireDigit = false;
         options.Password.RequireUppercase = false;
@@ -21,6 +23,9 @@ builder.Services.AddIdentity<IdentityUser, IdentityRole>(options =>
     })
     .AddEntityFrameworkStores<ApplicationDbContext>()
     .AddDefaultTokenProviders();
+
+// REGISTRO PARA QUE EL NAVBAR MUESTRE EL NOMBRE COMPLETO AUTOMÁTICAMENTE
+builder.Services.AddScoped<IUserClaimsPrincipalFactory<Usuario>, AdditionalUserClaimsPrincipalFactory>();
 
 builder.Services.ConfigureApplicationCookie(options =>
 {

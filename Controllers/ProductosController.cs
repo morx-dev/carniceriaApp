@@ -11,9 +11,9 @@ namespace carniceriaApp.Controllers;
 public class ProductosController : Controller
 {
     private readonly ApplicationDbContext _context;
-    private readonly UserManager<IdentityUser> _userManager;
+    private readonly UserManager<Usuario> _userManager;
 
-    public ProductosController(ApplicationDbContext context, UserManager<IdentityUser> userManager)
+    public ProductosController(ApplicationDbContext context, UserManager<Usuario> userManager)
     {
         _context = context;
         _userManager = userManager;

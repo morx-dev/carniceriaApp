@@ -9,7 +9,7 @@ public class DbSeeder
     public static async Task SeedRolesYAdminAsync(IServiceProvider serviceProvider)
     {
         var roleManager = serviceProvider.GetRequiredService<RoleManager<IdentityRole>>();
-        var userManager = serviceProvider.GetRequiredService<UserManager<IdentityUser>>();
+        var userManager = serviceProvider.GetRequiredService<UserManager<Usuario>>();
 
         string[] roles = { "Administrador", "CallCenter", "Mostrador", "Repartidor" };
 
@@ -27,11 +27,13 @@ public class DbSeeder
         var adminUser = await userManager.FindByEmailAsync(adminEmail);
         if (adminUser == null)
         {
-            adminUser = new IdentityUser
+            adminUser = new Usuario
             {
                 UserName = adminEmail,
                 Email = adminEmail,
-                EmailConfirmed = true
+                EmailConfirmed = true,
+                NombreCompleto = "Administrador General",
+                Activo = true
             };
 
             var resultado = await userManager.CreateAsync(adminUser, adminPassword);

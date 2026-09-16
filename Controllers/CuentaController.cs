@@ -6,10 +6,10 @@ namespace carniceriaApp.Controllers;
 
 public class CuentaController : Controller
 {
-    private readonly SignInManager<IdentityUser> _signInManager;
-    private readonly UserManager<IdentityUser> _userManager;
+    private readonly SignInManager<Usuario> _signInManager;
+    private readonly UserManager<Usuario> _userManager;
 
-    public CuentaController(SignInManager<IdentityUser> signInManager, UserManager<IdentityUser> userManager)
+    public CuentaController(SignInManager<Usuario> signInManager, UserManager<Usuario> userManager)
     {
         _signInManager = signInManager;
         _userManager = userManager;
@@ -31,6 +31,13 @@ public class CuentaController : Controller
         if (!ModelState.IsValid)
             return View(modelo);
 
+        var usuario = await _userManager.FindByEmailAsync(modelo.Email);
+        if (usuario != null && !usuario.Activo)
+        {
+            ModelState.AddModelError(string.Empty, "Este usuario está desactivado. Contacta al administrador.");
+            return View(modelo);
+        }
+
         var resultado = await _signInManager.PasswordSignInAsync(
             modelo.Email, modelo.Password, modelo.RecordarMe, lockoutOnFailure: false);
 
@@ -38,25 +45,6 @@ public class CuentaController : Controller
         {
             if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
                 return Redirect(returnUrl);
-
-            // Obtenemos el usuario para evaluar sus roles y redirigirlo a su módulo principal
-            var user = await _userManager.FindByEmailAsync(modelo.Email);
-            if (user != null)
-            {
-                var roles = await _userManager.GetRolesAsync(user);
-
-                if (roles.Contains("Administrador"))
-                    return RedirectToAction("Index", "Productos");
-
-                if (roles.Contains("CallCenter"))
-                    return RedirectToAction("Pendientes", "Ventas");
-
-                if (roles.Contains("Mostrador"))
-                    return RedirectToAction("Crear", "Ventas");
-
-                if (roles.Contains("Repartidor"))
-                    return RedirectToAction("MisEntregas", "Ventas");
-            }
 
             return RedirectToAction("Index", "Productos");
         }

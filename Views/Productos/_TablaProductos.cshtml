@@ -1,47 +1,47 @@
 @model List<carniceriaApp.Models.Producto>
 
-<div class="table-responsive">
-    <table class="table table-striped table-hover align-middle" id="tablaProductos">
-        <thead>
-            <tr>
-                <th>Nombre</th>
-                <th>Categoría</th>
-                <th>Precio actual</th>
-                <th>Estado</th>
-                <th style="width: 180px;"></th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var producto in Model)
-            {
-                <tr class="@(producto.Activo ? "" : "table-secondary text-muted")">
-                    <td>@producto.Nombre</td>
-                    <td>@producto.Categoria</td>
-                    <td>Q@(producto.PrecioActual.ToString("N2"))</td>
-                    <td>
-                        @if (producto.Activo)
-                        {
-                            <span class="badge bg-success">Activo</span>
-                        }
-                        else
-                        {
-                            <span class="badge bg-secondary">Inactivo</span>
-                        }
-                    </td>
-                    <td>
+<table class="table table-striped table-hover align-middle mb-0" id="tablaProductos">
+    <thead>
+        <tr>
+            <th>Nombre</th>
+            <th>Categoría</th>
+            <th>Precio actual</th>
+            <th>Estado</th>
+            <th class="text-end" style="width: 140px;">Acciones</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var producto in Model)
+        {
+            <tr class="@(producto.Activo ? "" : "table-secondary text-muted")">
+                <td>@producto.Nombre</td>
+                <td>@producto.Categoria</td>
+                <td>Q@(producto.PrecioActual.ToString("N2"))</td>
+                <td>
+                    @if (producto.Activo)
+                    {
+                        <span class="badge bg-success">Activo</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-secondary">Inactivo</span>
+                    }
+                </td>
+                <td class="text-end">
+                    <div class="d-inline-flex gap-1 flex-wrap justify-content-end">
                         <a asp-action="Editar" asp-route-id="@producto.Id" class="btn btn-sm btn-outline-primary">Editar</a>
                         @if (producto.Activo)
                         {
                             <a asp-action="Eliminar" asp-route-id="@producto.Id" class="btn btn-sm btn-outline-danger">Desactivar</a>
                         }
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </table>
-</div>
+                    </div>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
 
 @if (!Model.Any())
 {
-    <p class="text-muted" id="noProductosMensaje">No se encontraron productos con esos filtros.</p>
+    <p class="text-muted text-center py-3 mb-0" id="noProductosMensaje">No se encontraron productos con esos filtros.</p>
 }

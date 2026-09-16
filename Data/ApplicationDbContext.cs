@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace carniceriaApp.Data;
 
-public class ApplicationDbContext : IdentityDbContext<IdentityUser>
+public class ApplicationDbContext : IdentityDbContext<Usuario>
 {
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
         : base(options) { }

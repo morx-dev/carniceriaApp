@@ -3,31 +3,47 @@
     ViewData["Title"] = "Iniciar sesión";
 }
 
-<div class="row justify-content-center mt-5">
-    <div class="col-md-4">
-        <h2 class="mb-4 text-center">El Esfuerzo - Iniciar sesión</h2>
-        <form asp-action="Login" method="post">
-            <input type="hidden" asp-for="@ViewData["ReturnUrl"]" name="returnUrl" />
-            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+<div class="row justify-content-center align-items-center py-5 my-4">
+    <div class="col-md-4 col-sm-8">
+        <div class="card shadow-lg border-0 rounded-4 p-4 bg-white" style="border-top: 5px solid #dc3545 !important;">
+            <div class="card-body">
+                <div class="text-center mb-4">
+                    <img src="~/images/logo_carniceria.png" alt="Carnicería El Esfuerzo" class="img-fluid" style="max-height: 110px;" />
+                </div>
+                
+                <h3 class="mb-4 text-center fw-bold" style="color: #0d6efd;">Iniciar sesión</h3>
+                
+                <form asp-action="Login" method="post">
+                    <input type="hidden" asp-for="@ViewData["ReturnUrl"]" name="returnUrl" />
+                    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
 
-            <div class="mb-3">
-                <label asp-for="Email" class="form-label"></label>
-                <input asp-for="Email" class="form-control" />
-                <span asp-validation-for="Email" class="text-danger"></span>
+                    <div class="mb-3">
+                        <label asp-for="Email" class="form-label text-secondary fw-semibold"></label>
+                        <input asp-for="Email" class="form-control rounded-pill px-3 shadow-none border-primary-subtle" />
+                        <span asp-validation-for="Email" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Password" class="form-label text-secondary fw-semibold"></label>
+                        <input asp-for="Password" class="form-control rounded-pill px-3 shadow-none border-primary-subtle" />
+                        <span asp-validation-for="Password" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3 form-check">
+                        <input asp-for="RecordarMe" class="form-check-input" />
+                        <label asp-for="RecordarMe" class="form-check-label text-secondary"></label>
+                    </div>
+
+                    <button type="submit" class="btn w-100 rounded-pill py-2 fw-bold shadow-sm text-white" style="background-color: #0d6efd; border-color: #0d6efd;">Entrar</button>
+                </form>
             </div>
-
-            <div class="mb-3">
-                <label asp-for="Password" class="form-label"></label>
-                <input asp-for="Password" class="form-control" />
-                <span asp-validation-for="Password" class="text-danger"></span>
-            </div>
-
-            <div class="mb-3 form-check">
-                <input asp-for="RecordarMe" class="form-check-input" />
-                <label asp-for="RecordarMe" class="form-check-label"></label>
-            </div>
-
-            <button type="submit" class="btn btn-primary w-100">Entrar</button>
-        </form>
+        </div>
     </div>
 </div>
+
+<!-- Script rápido para poner el fondo azul claro a la página de login sin bloquear elementos -->
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        document.body.style.backgroundColor = "#eaf4fc";
+    });
+</script>

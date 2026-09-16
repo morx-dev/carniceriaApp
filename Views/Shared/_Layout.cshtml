@@ -64,11 +64,14 @@
                     <ul class="navbar-nav">
                         @if (User.Identity != null && User.Identity.IsAuthenticated)
                         {
+                            // Buscamos el claim del nombre completo (o caemos en el Identity.Name si no existe)
+                            var nombreUsuario = User.FindFirst("NombreCompleto")?.Value ?? User.Identity.Name;
+
                             <li class="nav-item d-flex align-items-center me-3">
-                                <span class="text-dark">Hola, @User.Identity.Name</span>
+                                <span class="text-dark">Hola, @nombreUsuario</span>
                             </li>
                             <li class="nav-item">
-                                <form asp-controller="Cuenta" asp-action="Logout" method="post">
+                                <form asp-controller="Cuenta" asp-action="Logout" method="post" class="form-inline">
                                     <button type="submit" class="btn btn-link nav-link text-dark">Cerrar sesión</button>
                                 </form>
                             </li>
@@ -95,7 +98,7 @@
             &copy; 2026 - carniceriaApp
         </div>
     </footer>
-    </footer>
+    
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>

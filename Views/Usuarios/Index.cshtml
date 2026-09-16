@@ -1,13 +1,13 @@
-@model List<carniceriaApp.Models.Producto>
+@model List<(carniceriaApp.Models.Usuario Usuario, string Rol)>
 @{
-    ViewData["Title"] = "Productos";
+    ViewData["Title"] = "Usuarios";
 }
 
 <div style="background-color: #eaf4fc; min-height: 100vh; padding-top: 1.5rem; padding-bottom: 3rem; margin-top: -1rem; margin-right: calc(-.5 * var(--bs-gutter-x)); margin-left: calc(-.5 * var(--bs-gutter-x));">
     <div class="container">
         <div class="d-flex justify-content-between align-items-center mb-3">
-            <h2 class="text-primary fw-bold">Productos</h2>
-            <a asp-action="Crear" class="btn btn-primary">+ Nuevo producto</a>
+            <h2 class="text-primary fw-bold">Usuarios</h2>
+            <a asp-action="Crear" class="btn btn-primary">+ Nuevo usuario</a>
         </div>
 
         @if (TempData["Mensaje"] != null)
@@ -18,21 +18,24 @@
         <div class="row g-2 mb-3">
             <div class="col-md-5">
                 <input type="text" id="inputBusqueda" class="form-control"
-                       placeholder="Buscar por nombre..."
+                       placeholder="Buscar por nombre o correo..."
                        value="@ViewBag.BusquedaActual" autocomplete="off" autofocus />
             </div>
             <div class="col-md-4">
-                <select id="selectCategoria" class="form-select">
-                    <option value="">Todas las categorías</option>
-                    @foreach (var cat in Enum.GetValues(typeof(carniceriaApp.Models.CategoriaProducto)))
+                <select id="selectRol" class="form-select">
+                    <option value="">Todos los roles</option>
+                    @if (ViewBag.Roles != null)
                     {
-                        if (ViewBag.CategoriaActual != null && (carniceriaApp.Models.CategoriaProducto)ViewBag.CategoriaActual == (carniceriaApp.Models.CategoriaProducto)cat)
+                        @foreach (var rol in (List<string>)ViewBag.Roles)
                         {
-                            <option value="@cat" selected>@cat</option>
-                        }
-                        else
-                        {
-                            <option value="@cat">@cat</option>
+                            if (ViewBag.RolActual != null && (string)ViewBag.RolActual == rol)
+                            {
+                                <option value="@rol" selected>@rol</option>
+                            }
+                            else
+                            {
+                                <option value="@rol">@rol</option>
+                            }
                         }
                     }
                 </select>
@@ -40,8 +43,8 @@
         </div>
 
         <!-- Contenedor donde se actualiza la tabla dinámicamente -->
-        <div id="contenedorTabla">
-            <partial name="_TablaProductos" model="Model" />
+        <div id="contenedorTablaUsuarios">
+            <partial name="_TablaUsuarios" model="Model" />
         </div>
     </div>
 </div>
@@ -49,16 +52,16 @@
 @section Scripts {
     <script>
         const inputBusqueda = document.getElementById('inputBusqueda');
-        const selectCategoria = document.getElementById('selectCategoria');
-        const contenedorTabla = document.getElementById('contenedorTabla');
+        const selectRol = document.getElementById('selectRol');
+        const contenedorTabla = document.getElementById('contenedorTablaUsuarios');
 
         let timeout = null;
 
         function realizarBusqueda() {
             const busqueda = inputBusqueda.value;
-            const categoria = selectCategoria.value;
+            const rol = selectRol.value;
 
-            const url = `@Url.Action("Index", "Productos")?busqueda=${encodeURIComponent(busqueda)}&categoria=${encodeURIComponent(categoria)}`;
+            const url = `@Url.Action("Index", "Usuarios")?busqueda=${encodeURIComponent(busqueda)}&rol=${encodeURIComponent(rol)}`;
 
             fetch(url, {
                 headers: {
@@ -79,7 +82,7 @@
             }, 300);
         });
 
-        selectCategoria.addEventListener('change', function () {
+        selectRol.directive = selectRol.addEventListener('change', function () {
             realizarBusqueda();
         });
     </script>
