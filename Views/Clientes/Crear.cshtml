@@ -1,0 +1,45 @@
+@model carniceriaApp.Models.Cliente
+@{
+    ViewData["Title"] = "Nuevo cliente";
+}
+
+<div style="background-color: #eaf4fc; min-height: 100vh; padding-top: 1.5rem; padding-bottom: 3rem; margin-top: -1rem; margin-right: calc(-.5 * var(--bs-gutter-x)); margin-left: calc(-.5 * var(--bs-gutter-x));">
+    <div class="container">
+        <h2 class="text-primary fw-bold mb-4">Nuevo cliente</h2>
+
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card shadow-sm border-0 rounded-4 p-4 bg-white">
+                    <div class="card-body">
+                        <form asp-action="Crear" method="post">
+                            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                            <div class="mb-3">
+                                <label asp-for="Nombre" class="form-label text-secondary fw-semibold"></label>
+                                <input asp-for="Nombre" class="form-control" placeholder="Ej. María López" />
+                                <span asp-validation-for="Nombre" class="text-danger"></span>
+                            </div>
+
+                            <div class="mb-3">
+                                <label asp-for="Telefono" class="form-label text-secondary fw-semibold"></label>
+                                <input asp-for="Telefono" class="form-control" placeholder="Ej. 5555-1234" />
+                                <span asp-validation-for="Telefono" class="text-danger"></span>
+                            </div>
+
+                            <div class="mb-3">
+                                <label asp-for="Direccion" class="form-label text-secondary fw-semibold"></label>
+                                <textarea asp-for="Direccion" class="form-control" rows="2" placeholder="Ej. Residencial El Esfuerzo, casa 12"></textarea>
+                                <span asp-validation-for="Direccion" class="text-danger"></span>
+                            </div>
+
+                            <div class="d-flex gap-2">
+                                <button type="submit" class="btn btn-primary px-4">Guardar</button>
+                                <a asp-action="Index" class="btn btn-secondary px-4">Cancelar</a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

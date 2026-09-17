@@ -43,14 +43,33 @@ public class CuentaController : Controller
 
         if (resultado.Succeeded)
         {
-            if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
-                return Redirect(returnUrl);
-
-            return RedirectToAction("Index", "Productos");
+            return await RedirectSegunRolAsync(usuario!);
         }
 
         ModelState.AddModelError(string.Empty, "Correo o contraseña incorrectos.");
         return View(modelo);
+    }
+
+    private async Task<IActionResult> RedirectSegunRolAsync(Usuario usuario)
+    {
+        var roles = await _userManager.GetRolesAsync(usuario);
+
+        if (roles.Contains("Administrador"))
+            return RedirectToAction("Index", "Productos");
+
+        // TODO: cuando exista VentasController, cambiar a RedirectToAction("Pendientes", "Ventas")
+        if (roles.Contains("CallCenter"))
+            return RedirectToAction("Index", "Clientes");
+
+        // TODO: cuando exista VentasController, cambiar a RedirectToAction("Crear", "Ventas")
+        if (roles.Contains("Mostrador"))
+            return RedirectToAction("Index", "Clientes");
+
+        // TODO: cuando exista VentasController, cambiar a RedirectToAction("MisEntregas", "Ventas")
+        if (roles.Contains("Repartidor"))
+            return RedirectToAction("Index", "Home");
+
+        return RedirectToAction("Index", "Home");
     }
 
     [HttpPost]

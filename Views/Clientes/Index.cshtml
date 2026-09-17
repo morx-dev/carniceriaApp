@@ -1,0 +1,63 @@
+@model List<carniceriaApp.Models.Cliente>
+@{
+    ViewData["Title"] = "Clientes";
+}
+
+<div style="background-color: #eaf4fc; min-height: 100vh; padding-top: 1.5rem; padding-bottom: 3rem; margin-top: -1rem; margin-right: calc(-.5 * var(--bs-gutter-x)); margin-left: calc(-.5 * var(--bs-gutter-x));">
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h2 class="text-primary fw-bold">Clientes</h2>
+            <a asp-action="Crear" class="btn btn-primary">+ Nuevo cliente</a>
+        </div>
+
+        @if (TempData["Mensaje"] != null)
+        {
+            <div class="alert alert-success">@TempData["Mensaje"]</div>
+        }
+
+        <div class="row g-2 mb-3">
+            <div class="col-md-5">
+                <input type="text" id="inputBusqueda" class="form-control"
+                       placeholder="Buscar por nombre o teléfono..."
+                       value="@ViewBag.BusquedaActual" autocomplete="off" autofocus />
+            </div>
+        </div>
+
+        <!-- Contenedor donde se actualiza la tabla dinámicamente -->
+        <div id="contenedorTablaClientes">
+            <partial name="_TablaClientes" model="Model" />
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const inputBusqueda = document.getElementById('inputBusqueda');
+        const contenedorTabla = document.getElementById('contenedorTablaClientes');
+
+        let timeout = null;
+
+        function realizarBusqueda() {
+            const busqueda = inputBusqueda.value;
+            const url = `@Url.Action("Index", "Clientes")?busqueda=${encodeURIComponent(busqueda)}`;
+
+            fetch(url, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.text())
+            .then(html => {
+                contenedorTabla.innerHTML = html;
+            })
+            .catch(error => console.error('Error al filtrar:', error));
+        }
+
+        inputBusqueda.addEventListener('input', function () {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => {
+                realizarBusqueda();
+            }, 300);
+        });
+    </script>
+}

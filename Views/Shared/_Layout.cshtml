@@ -35,17 +35,21 @@
                                 </li>
                             }
 
-                            @if (User.IsInRole("Administrador") || User.IsInRole("CallCenter"))
+                            @if (User.IsInRole("Administrador") || User.IsInRole("CallCenter") || User.IsInRole("Mostrador"))
                             {
                                 <li class="nav-item">
                                     <a class="nav-link text-dark" asp-controller="Clientes" asp-action="Index">Clientes</a>
                                 </li>
+                            }
+
+                            @if (User.IsInRole("Administrador") || User.IsInRole("CallCenter"))
+                            {
                                 <li class="nav-item">
                                     <a class="nav-link text-dark" asp-controller="Ventas" asp-action="Pendientes">Pedidos pendientes</a>
                                 </li>
                             }
 
-                            @if (User.IsInRole("Administrador") || User.IsInRole("Mostrador"))
+                            @if (User.IsInRole("Administrador") || User.IsInRole("Mostrador") || User.IsInRole("CallCenter"))
                             {
                                 <li class="nav-item">
                                     <a class="nav-link text-dark" asp-controller="Ventas" asp-action="Crear">Crear venta</a>
