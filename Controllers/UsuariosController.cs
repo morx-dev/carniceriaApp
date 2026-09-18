@@ -1,55 +1,28 @@
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using carniceriaApp.Models;
+using carniceriaApp.Services.Interfaces;
 
 namespace carniceriaApp.Controllers;
 
 [Authorize(Roles = "Administrador")]
 public class UsuariosController : Controller
 {
-    private readonly UserManager<Usuario> _userManager;
-    private readonly RoleManager<IdentityRole> _roleManager;
+    private readonly IUsuarioService _usuarioService;
 
-    public UsuariosController(UserManager<Usuario> userManager, RoleManager<IdentityRole> roleManager)
+    public UsuariosController(IUsuarioService usuarioService)
     {
-        _userManager = userManager;
-        _roleManager = roleManager;
+        _usuarioService = usuarioService;
     }
 
     public async Task<IActionResult> Index(string? busqueda, string? rol)
     {
-        var usuariosQuery = _userManager.Users.AsQueryable();
+        var listaConRol = await _usuarioService.ObtenerUsuariosAsync(busqueda, rol);
 
-        // Filtrar por texto (Nombre o Correo)
-        if (!string.IsNullOrEmpty(busqueda))
-        {
-            usuariosQuery = usuariosQuery.Where(u => u.NombreCompleto.Contains(busqueda) || u.Email.Contains(busqueda));
-        }
-
-        // Ordenar del más reciente al más antiguo según la fecha de creación
-        var usuarios = usuariosQuery.OrderByDescending(u => u.FechaCreacion).ToList();
-        var listaConRol = new List<(Usuario Usuario, string Rol)>();
-
-        foreach (var usuario in usuarios)
-        {
-            var roles = await _userManager.GetRolesAsync(usuario);
-            var rolActual = roles.FirstOrDefault() ?? "Sin rol";
-            listaConRol.Add((usuario, rolActual));
-        }
-
-        // Filtrar por rol si se seleccionó uno en el select
-        if (!string.IsNullOrEmpty(rol))
-        {
-            listaConRol = listaConRol.Where(x => x.Rol == rol).ToList();
-        }
-
-        // Guardar valores actuales para mantenerlos en la vista
         ViewBag.BusquedaActual = busqueda;
         ViewBag.RolActual = rol;
-        ViewBag.Roles = _roleManager.Roles.Select(r => r.Name).ToList();
+        ViewBag.Roles = await _usuarioService.ObtenerRolesDisponiblesAsync();
 
-        // Si la petición viene por AJAX, retornamos solo la partial view de la tabla
         if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
         {
             return PartialView("_TablaUsuarios", listaConRol);
@@ -60,7 +33,7 @@ public class UsuariosController : Controller
 
     public async Task<IActionResult> Crear()
     {
-        ViewBag.Roles = _roleManager.Roles.Select(r => r.Name).ToList();
+        ViewBag.Roles = await _usuarioService.ObtenerRolesDisponiblesAsync();
         return View();
     }
 
@@ -68,72 +41,52 @@ public class UsuariosController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Crear(CrearUsuarioViewModel modelo)
     {
-        ViewBag.Roles = _roleManager.Roles.Select(r => r.Name).ToList();
+        ViewBag.Roles = await _usuarioService.ObtenerRolesDisponiblesAsync();
 
         if (!ModelState.IsValid)
             return View(modelo);
 
-        var existente = await _userManager.FindByEmailAsync(modelo.Email);
-        if (existente != null)
+        var resultado = await _usuarioService.CrearAsync(modelo);
+
+        if (!resultado.Exitoso)
         {
-            ModelState.AddModelError(string.Empty, "Ya existe un usuario con ese correo.");
+            ModelState.AddModelError(string.Empty, resultado.MensajeError!);
             return View(modelo);
         }
 
-        var nuevoUsuario = new Usuario
-        {
-            UserName = modelo.Email,
-            Email = modelo.Email,
-            EmailConfirmed = true,
-            NombreCompleto = modelo.NombreCompleto,
-            Activo = true,
-            FechaCreacion = DateTime.Now // Se registra la fecha actual automáticamente
-        };
-
-        var resultado = await _userManager.CreateAsync(nuevoUsuario, modelo.Password);
-
-        if (resultado.Succeeded)
-        {
-            await _userManager.AddToRoleAsync(nuevoUsuario, modelo.Rol);
-            TempData["Mensaje"] = "Usuario creado correctamente.";
-            return RedirectToAction(nameof(Index));
-        }
-
-        foreach (var error in resultado.Errors)
-            ModelState.AddModelError(string.Empty, error.Description);
-
-        return View(modelo);
+        TempData["Mensaje"] = "Usuario creado correctamente.";
+        return RedirectToAction(nameof(Index));
     }
 
     public async Task<IActionResult> Editar(string id)
     {
-        var usuario = await _userManager.FindByIdAsync(id);
+        var usuario = await _usuarioService.ObtenerPorIdAsync(id);
         if (usuario == null) return NotFound();
 
-        var rolesActuales = await _userManager.GetRolesAsync(usuario);
+        var rolActual = await _usuarioService.ObtenerRolActualAsync(usuario);
 
-        ViewBag.Roles = _roleManager.Roles.Select(r => r.Name).ToList();
-        ViewBag.RolActual = rolesActuales.FirstOrDefault();
+        var modelo = new EditarUsuarioViewModel
+        {
+            Id = usuario.Id,
+            NombreCompleto = usuario.NombreCompleto,
+            Rol = rolActual ?? string.Empty
+        };
 
-        return View(usuario);
+        ViewBag.Roles = await _usuarioService.ObtenerRolesDisponiblesAsync();
+        return View(modelo);
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Editar(string id, Usuario modelo, string nuevoRol)
+    public async Task<IActionResult> Editar(EditarUsuarioViewModel modelo)
     {
-        var usuario = await _userManager.FindByIdAsync(id);
-        if (usuario == null) return NotFound();
-
-        usuario.NombreCompleto = modelo.NombreCompleto;
-        await _userManager.UpdateAsync(usuario);
-
-        var rolesActuales = await _userManager.GetRolesAsync(usuario);
-        if (!rolesActuales.Contains(nuevoRol))
+        if (!ModelState.IsValid)
         {
-            await _userManager.RemoveFromRolesAsync(usuario, rolesActuales);
-            await _userManager.AddToRoleAsync(usuario, nuevoRol);
+            ViewBag.Roles = await _usuarioService.ObtenerRolesDisponiblesAsync();
+            return View(modelo);
         }
+
+        await _usuarioService.EditarAsync(modelo);
 
         TempData["Mensaje"] = "Usuario actualizado correctamente.";
         return RedirectToAction(nameof(Index));
@@ -143,12 +96,7 @@ public class UsuariosController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> CambiarEstado(string id)
     {
-        var usuario = await _userManager.FindByIdAsync(id);
-        if (usuario == null) return NotFound();
-
-        usuario.Activo = !usuario.Activo;
-        await _userManager.UpdateAsync(usuario);
-
+        await _usuarioService.CambiarEstadoAsync(id);
         return RedirectToAction(nameof(Index));
     }
 }

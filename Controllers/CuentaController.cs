@@ -1,18 +1,16 @@
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using carniceriaApp.Models;
+using carniceriaApp.Services.Interfaces;
 
 namespace carniceriaApp.Controllers;
 
 public class CuentaController : Controller
 {
-    private readonly SignInManager<Usuario> _signInManager;
-    private readonly UserManager<Usuario> _userManager;
+    private readonly ICuentaService _cuentaService;
 
-    public CuentaController(SignInManager<Usuario> signInManager, UserManager<Usuario> userManager)
+    public CuentaController(ICuentaService cuentaService)
     {
-        _signInManager = signInManager;
-        _userManager = userManager;
+        _cuentaService = cuentaService;
     }
 
     [HttpGet]
@@ -31,52 +29,22 @@ public class CuentaController : Controller
         if (!ModelState.IsValid)
             return View(modelo);
 
-        var usuario = await _userManager.FindByEmailAsync(modelo.Email);
-        if (usuario != null && !usuario.Activo)
+        var resultado = await _cuentaService.IniciarSesionAsync(modelo.Email, modelo.Password, modelo.RecordarMe);
+
+        if (!resultado.Exitoso)
         {
-            ModelState.AddModelError(string.Empty, "Este usuario está desactivado. Contacta al administrador.");
+            ModelState.AddModelError(string.Empty, resultado.MensajeError!);
             return View(modelo);
         }
 
-        var resultado = await _signInManager.PasswordSignInAsync(
-            modelo.Email, modelo.Password, modelo.RecordarMe, lockoutOnFailure: false);
-
-        if (resultado.Succeeded)
-        {
-            return await RedirectSegunRolAsync(usuario!);
-        }
-
-        ModelState.AddModelError(string.Empty, "Correo o contraseña incorrectos.");
-        return View(modelo);
-    }
-
-    private async Task<IActionResult> RedirectSegunRolAsync(Usuario usuario)
-    {
-        var roles = await _userManager.GetRolesAsync(usuario);
-
-        if (roles.Contains("Administrador"))
-            return RedirectToAction("Index", "Productos");
-
-        // TODO: cuando exista VentasController, cambiar a RedirectToAction("Pendientes", "Ventas")
-        if (roles.Contains("CallCenter"))
-            return RedirectToAction("Index", "Clientes");
-
-        // TODO: cuando exista VentasController, cambiar a RedirectToAction("Crear", "Ventas")
-        if (roles.Contains("Mostrador"))
-            return RedirectToAction("Index", "Clientes");
-
-        // TODO: cuando exista VentasController, cambiar a RedirectToAction("MisEntregas", "Ventas")
-        if (roles.Contains("Repartidor"))
-            return RedirectToAction("Index", "Home");
-
-        return RedirectToAction("Index", "Home");
+        return RedirectToAction(resultado.AccionDestino!, resultado.ControllerDestino!);
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Logout()
     {
-        await _signInManager.SignOutAsync();
+        await _cuentaService.CerrarSesionAsync();
         return RedirectToAction("Login", "Cuenta");
     }
 

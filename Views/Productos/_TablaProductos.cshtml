@@ -16,7 +16,7 @@
             <tr class="@(producto.Activo ? "" : "table-secondary text-muted")">
                 <td>@producto.Nombre</td>
                 <td>@producto.Categoria</td>
-                <td>Q@(producto.PrecioActual.ToString("N2"))</td>
+                <td>Q@(producto.PrecioActual?.ToString("N2") ?? "0.00")</td>
                 <td>
                     @if (producto.Activo)
                     {

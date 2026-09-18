@@ -3,25 +3,31 @@
     ViewData["Title"] = "Desactivar producto";
 }
 
-<h2>¿Desactivar este producto?</h2>
+<div style="background-color: #eaf4fc; min-height: 100vh; padding-top: 1.5rem; padding-bottom: 3rem; margin-top: -1rem; margin-right: calc(-.5 * var(--bs-gutter-x)); margin-left: calc(-.5 * var(--bs-gutter-x));">
+    <div class="container">
+        <h2 class="text-primary fw-bold mb-3">¿Desactivar este producto?</h2>
 
-<div class="alert alert-warning">
-    No se elimina físicamente — solo se marca como inactivo, para no romper el historial de ventas y precios ya registrados.
+        <div class="alert alert-warning shadow-sm">
+            No se elimina físicamente — solo se marca como inactivo, para no romper el historial de ventas y precios ya registrados.
+        </div>
+
+        <div class="card shadow-sm border-0 rounded-4 p-4 bg-white mb-3">
+            <dl class="row mb-0">
+                <dt class="col-sm-3 text-secondary">Nombre</dt>
+                <dd class="col-sm-9 fw-bold">@Model.Nombre</dd>
+
+                <dt class="col-sm-3 text-secondary">Categoría</dt>
+                <dd class="col-sm-9">@Model.Categoria</dd>
+
+                <dt class="col-sm-3 text-secondary">Precio actual</dt>
+                <dd class="col-sm-9">Q@(string.Format("{0:N2}", Model.PrecioActual))</dd>
+            </dl>
+        </div>
+
+        <form asp-action="Eliminar" method="post">
+            <input type="hidden" asp-for="Id" />
+            <button type="submit" class="btn btn-danger px-4">Sí, desactivar</button>
+            <a asp-action="Index" class="btn btn-secondary px-4">Cancelar</a>
+        </form>
+    </div>
 </div>
-
-<dl class="row">
-    <dt class="col-sm-3">Nombre</dt>
-    <dd class="col-sm-9">@Model.Nombre</dd>
-
-    <dt class="col-sm-3">Categoría</dt>
-    <dd class="col-sm-9">@Model.Categoria</dd>
-
-    <dt class="col-sm-3">Precio actual</dt>
-    <dd class="col-sm-9">Q@(Model.PrecioActual.ToString("N2"))</dd>
-</dl>
-
-<form asp-action="Eliminar" method="post">
-    <input type="hidden" asp-for="Id" />
-    <button type="submit" class="btn btn-danger">Sí, desactivar</button>
-    <a asp-action="Index" class="btn btn-secondary">Cancelar</a>
-</form>

@@ -5,19 +5,23 @@
         <thead>
             <tr>
                 <th>Nombre</th>
-                <th>Teléfono</th>
-                <th>Dirección</th>
+                <th class="d-none d-md-table-cell">Teléfono</th>
+                <th class="d-none d-md-table-cell">Dirección</th>
                 <th>Estado</th>
-                <th style="width: 180px;" class="text-end">Acciones</th>
+                <th class="text-end" style="width: 140px;">Acciones</th>
             </tr>
         </thead>
         <tbody>
             @foreach (var cliente in Model)
             {
                 <tr class="@(cliente.Activo ? "" : "table-secondary text-muted")">
-                    <td>@cliente.Nombre</td>
-                    <td>@cliente.Telefono</td>
-                    <td>@cliente.Direccion</td>
+                    <td>
+                        <div class="fw-bold">@cliente.Nombre</div>
+                        <div class="small text-muted d-md-none text-break">@cliente.Telefono</div>
+                        <div class="small text-muted d-md-none text-break">@cliente.Direccion</div>
+                    </td>
+                    <td class="d-none d-md-table-cell text-break">@cliente.Telefono</td>
+                    <td class="d-none d-md-table-cell text-break">@cliente.Direccion</td>
                     <td>
                         @if (cliente.Activo)
                         {
@@ -29,16 +33,18 @@
                         }
                     </td>
                     <td class="text-end">
-                        <div class="d-inline-flex gap-1 flex-wrap justify-content-end">
-                            <a asp-action="Editar" asp-route-id="@cliente.Id" class="btn btn-sm btn-outline-primary">Editar</a>
+                        <div class="d-inline-flex gap-1">
+                            <a asp-action="Editar" asp-route-id="@cliente.Id" class="btn btn-sm btn-outline-primary" title="Editar">
+                                Editar
+                            </a>
                             <form asp-action="CambiarEstado" asp-route-id="@cliente.Id" method="post" class="d-inline">
                                 @if (cliente.Activo)
                                 {
-                                    <button type="submit" class="btn btn-sm btn-outline-danger">Desactivar</button>
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Desactivar">Desactivar</button>
                                 }
                                 else
                                 {
-                                    <button type="submit" class="btn btn-sm btn-outline-success">Activar</button>
+                                    <button type="submit" class="btn btn-sm btn-outline-success" title="Activar">Activar</button>
                                 }
                             </form>
                         </div>

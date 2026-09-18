@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using carniceriaApp.Data;
 using carniceriaApp.Models;
+using carniceriaApp.Services;
+using carniceriaApp.Services.Interfaces;
 using carniceriaApp; // <-- Asegura que reconozca el factory creado en la raíz
 
 var builder = WebApplication.CreateBuilder(args);
@@ -26,6 +28,12 @@ builder.Services.AddIdentity<Usuario, IdentityRole>(options =>
 
 // REGISTRO PARA QUE EL NAVBAR MUESTRE EL NOMBRE COMPLETO AUTOMÁTICAMENTE
 builder.Services.AddScoped<IUserClaimsPrincipalFactory<Usuario>, AdditionalUserClaimsPrincipalFactory>();
+
+// Capa de servicios
+builder.Services.AddScoped<ICuentaService, CuentaService>();
+builder.Services.AddScoped<IProductoService, ProductoService>();
+builder.Services.AddScoped<IUsuarioService, UsuarioService>();
+builder.Services.AddScoped<IClienteService, ClienteService>();
 
 builder.Services.ConfigureApplicationCookie(options =>
 {

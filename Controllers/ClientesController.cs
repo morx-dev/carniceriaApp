@@ -1,31 +1,23 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using carniceriaApp.Data;
 using carniceriaApp.Models;
+using carniceriaApp.Services.Interfaces;
 
 namespace carniceriaApp.Controllers;
 
 [Authorize(Roles = "Administrador,CallCenter,Mostrador")]
 public class ClientesController : Controller
 {
-    private readonly ApplicationDbContext _context;
+    private readonly IClienteService _clienteService;
 
-    public ClientesController(ApplicationDbContext context)
+    public ClientesController(IClienteService clienteService)
     {
-        _context = context;
+        _clienteService = clienteService;
     }
 
     public async Task<IActionResult> Index(string? busqueda)
     {
-        var query = _context.Clientes.AsQueryable();
-
-        if (!string.IsNullOrWhiteSpace(busqueda))
-        {
-            query = query.Where(c => c.Nombre.Contains(busqueda) || c.Telefono.Contains(busqueda));
-        }
-
-        var clientes = await query.OrderBy(c => c.Nombre).ToListAsync();
+        var clientes = await _clienteService.ObtenerClientesAsync(busqueda);
         ViewBag.BusquedaActual = busqueda;
 
         // Soporte AJAX igual que Productos y Usuarios
@@ -49,8 +41,7 @@ public class ClientesController : Controller
         if (!ModelState.IsValid)
             return View(cliente);
 
-        _context.Clientes.Add(cliente);
-        await _context.SaveChangesAsync();
+        await _clienteService.CrearAsync(cliente);
 
         TempData["Mensaje"] = "Cliente creado correctamente.";
         return RedirectToAction(nameof(Index));
@@ -58,7 +49,7 @@ public class ClientesController : Controller
 
     public async Task<IActionResult> Editar(int id)
     {
-        var cliente = await _context.Clientes.FindAsync(id);
+        var cliente = await _clienteService.ObtenerPorIdAsync(id);
         if (cliente == null) return NotFound();
         return View(cliente);
     }
@@ -70,14 +61,13 @@ public class ClientesController : Controller
         if (id != clienteEditado.Id) return NotFound();
         if (!ModelState.IsValid) return View(clienteEditado);
 
-        var clienteActual = await _context.Clientes.FindAsync(id);
-        if (clienteActual == null) return NotFound();
+        var resultado = await _clienteService.EditarAsync(id, clienteEditado);
+        if (!resultado.Exitoso)
+        {
+            ModelState.AddModelError(string.Empty, resultado.MensajeError!);
+            return View(clienteEditado);
+        }
 
-        clienteActual.Nombre = clienteEditado.Nombre;
-        clienteActual.Telefono = clienteEditado.Telefono;
-        clienteActual.Direccion = clienteEditado.Direccion;
-
-        await _context.SaveChangesAsync();
         TempData["Mensaje"] = "Cliente actualizado correctamente.";
         return RedirectToAction(nameof(Index));
     }
@@ -86,12 +76,7 @@ public class ClientesController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> CambiarEstado(int id)
     {
-        var cliente = await _context.Clientes.FindAsync(id);
-        if (cliente == null) return NotFound();
-
-        cliente.Activo = !cliente.Activo;
-        await _context.SaveChangesAsync();
-
+        await _clienteService.CambiarEstadoAsync(id);
         return RedirectToAction(nameof(Index));
     }
 }

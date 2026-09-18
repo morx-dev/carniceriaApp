@@ -1,4 +1,4 @@
-@model carniceriaApp.Models.Usuario
+@model carniceriaApp.Models.EditarUsuarioViewModel
 @{
     ViewData["Title"] = "Editar usuario";
 }
@@ -7,32 +7,25 @@
 
 <div class="row">
     <div class="col-md-6">
-        <form asp-action="Editar" asp-route-id="@Model.Id" method="post">
-            <div class="mb-3">
-                <label class="form-label">Correo (no editable)</label>
-                <input value="@Model.Email" class="form-control" disabled />
-            </div>
+        <form asp-action="Editar" method="post">
+            <input type="hidden" asp-for="Id" />
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 
             <div class="mb-3">
                 <label asp-for="NombreCompleto" class="form-label"></label>
                 <input asp-for="NombreCompleto" class="form-control" />
+                <span asp-validation-for="NombreCompleto" class="text-danger"></span>
             </div>
 
             <div class="mb-3">
-                <label class="form-label">Rol</label>
-                <select name="nuevoRol" class="form-select">
+                <label asp-for="Rol" class="form-label">Rol</label>
+                <select asp-for="Rol" class="form-select">
                     @foreach (var rol in (List<string?>)ViewBag.Roles)
                     {
-                        if (rol == (string)ViewBag.RolActual)
-                        {
-                            <option value="@rol" selected>@rol</option>
-                        }
-                        else
-                        {
-                            <option value="@rol">@rol</option>
-                        }
+                        <option value="@rol">@rol</option>
                     }
                 </select>
+                <span asp-validation-for="Rol" class="text-danger"></span>
             </div>
 
             <button type="submit" class="btn btn-primary">Guardar cambios</button>
