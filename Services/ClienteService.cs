@@ -14,13 +14,20 @@ public class ClienteService : IClienteService
         _context = context;
     }
 
-    public async Task<List<Cliente>> ObtenerClientesAsync(string? busqueda)
+    public async Task<List<Cliente>> ObtenerClientesAsync(string? busqueda, int? sector)
     {
         var query = _context.Clientes.AsQueryable();
 
+        // Filtro por nombre o teléfono
         if (!string.IsNullOrWhiteSpace(busqueda))
         {
             query = query.Where(c => c.Nombre.Contains(busqueda) || c.Telefono.Contains(busqueda));
+        }
+
+        // Filtro por sector residencial
+        if (sector.HasValue)
+        {
+            query = query.Where(c => (int)c.Sector == sector.Value);
         }
 
         return await query.OrderBy(c => c.Nombre).ToListAsync();
@@ -47,6 +54,7 @@ public class ClienteService : IClienteService
 
         clienteActual.Nombre = clienteEditado.Nombre;
         clienteActual.Telefono = clienteEditado.Telefono;
+        clienteActual.Sector = clienteEditado.Sector;
         clienteActual.Direccion = clienteEditado.Direccion;
 
         await _context.SaveChangesAsync();

@@ -1,52 +1,55 @@
 @model List<(carniceriaApp.Models.Usuario Usuario, string Rol)>
 
-<div class="table-responsive">
-    <table class="table table-striped table-hover align-middle bg-white rounded shadow-sm" id="tablaUsuarios">
-        <thead>
+<div class="table-responsive border-0 rounded shadow-sm">
+    <table class="table table-striped table-hover align-middle mb-0 bg-white" id="tablaUsuarios">
+        <thead class="text-white" style="background: linear-gradient(135deg, #4f8fea 0%, #3568c2 100%);">
             <tr>
-                <th>Usuario</th>
-                <th class="d-none d-md-table-cell">Correo</th>
-                <th>Rol</th>
-                <th>Estado</th>
-                <th class="text-end" style="width: 140px;">Acciones</th>
+                <th class="py-3 px-2 px-md-3">Usuario</th>
+                <th class="py-3 px-2 d-none d-md-table-cell">Correo</th>
+                <th class="py-3 px-2">Rol</th>
+                <th class="py-3 px-2">Estado</th>
+                <th class="text-end py-3 px-2 px-md-3">Acciones</th>
             </tr>
         </thead>
         <tbody>
             @foreach (var item in Model)
             {
                 <tr class="@(item.Usuario.Activo ? "" : "table-secondary text-muted")">
-                    <td>
-                        <div class="fw-bold">@item.Usuario.NombreCompleto</div>
-                        <div class="small text-muted d-md-none text-break">@item.Usuario.Email</div>
+                    <td class="px-2 px-md-3 py-2">
+                        <div class="fw-bold text-dark" style="font-size: 0.85rem;">@item.Usuario.NombreCompleto</div>
+                        <div class="small text-muted d-md-none text-break mt-1" style="font-size: 0.75rem;">
+                            <i class="bi bi-envelope-fill me-1" style="color: #4f8fea;"></i>@item.Usuario.Email
+                        </div>
                     </td>
-                    <td class="d-none d-md-table-cell text-break">@item.Usuario.Email</td>
-                    <td>
-                        <!-- Rol unificado con un estilo sobrio y limpio -->
-                        <span class="badge bg-light text-dark border">@item.Rol</span>
+                    <td class="d-none d-md-table-cell text-break py-2 px-2" style="font-size: 0.85rem;">@item.Usuario.Email</td>
+                    <td class="py-2 px-2">
+                        <span class="badge px-2 py-1 fw-semibold" style="background-color: #eaf2fd; color: #1e4976; border: 1px solid #4f8fea; font-size: 0.75rem;">
+                            @item.Rol
+                        </span>
                     </td>
-                    <td>
+                    <td class="py-2 px-2">
                         @if (item.Usuario.Activo)
                         {
-                            <span class="badge bg-success">Activo</span>
+                            <span class="badge rounded-pill bg-success px-2 py-1" style="font-size: 0.7rem;">Activo</span>
                         }
                         else
                         {
-                            <span class="badge bg-secondary">Inactivo</span>
+                            <span class="badge rounded-pill bg-secondary px-2 py-1" style="font-size: 0.7rem;">Inactivo</span>
                         }
                     </td>
-                    <td class="text-end">
-                        <div class="d-inline-flex gap-1">
-                            <a asp-action="Editar" asp-route-id="@item.Usuario.Id" class="btn btn-sm btn-outline-primary" title="Editar">
+                    <td class="text-end px-2 px-md-3 py-2">
+                        <div class="d-flex flex-column flex-sm-row justify-content-end align-items-end align-items-sm-center gap-1">
+                            <a asp-action="Editar" asp-route-id="@item.Usuario.Id" class="btn btn-sm rounded-pill px-2 py-0 fw-semibold text-nowrap" style="font-size: 0.7rem; border: 1px solid #4f8fea; color: #3568c2;" title="Editar">
                                 Editar
                             </a>
-                            <form asp-action="CambiarEstado" asp-route-id="@item.Usuario.Id" method="post" class="d-inline">
+                            <form asp-action="CambiarEstado" asp-route-id="@item.Usuario.Id" method="post" class="d-inline m-0">
                                 @if (item.Usuario.Activo)
                                 {
-                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Desactivar">Desactivar</button>
+                                    <button type="submit" class="btn btn-sm rounded-pill px-2 py-0 fw-semibold text-nowrap" style="font-size: 0.7rem; border: 1px solid #f16c6c; color: #d94f4f; background: #fff;" title="Desactivar">Desactivar</button>
                                 }
                                 else
                                 {
-                                    <button type="submit" class="btn btn-sm btn-outline-success" title="Activar">Activar</button>
+                                    <button type="submit" class="btn btn-sm btn-outline-success rounded-pill px-2 py-0 fw-semibold text-nowrap" style="font-size: 0.7rem;" title="Activar">Activar</button>
                                 }
                             </form>
                         </div>
@@ -59,5 +62,7 @@
 
 @if (!Model.Any())
 {
-    <p class="text-muted text-center py-3" id="noUsuariosMensaje">No se encontraron usuarios con esos filtros.</p>
+    <div class="text-center py-4 bg-white rounded shadow-sm">
+        <p class="text-muted mb-0" id="noUsuariosMensaje">No se encontraron usuarios con esos filtros.</p>
+    </div>
 }

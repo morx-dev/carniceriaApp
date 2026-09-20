@@ -15,10 +15,13 @@ public class ClientesController : Controller
         _clienteService = clienteService;
     }
 
-    public async Task<IActionResult> Index(string? busqueda)
+    public async Task<IActionResult> Index(string? busqueda, int? sector)
     {
-        var clientes = await _clienteService.ObtenerClientesAsync(busqueda);
+        var clientes = await _clienteService.ObtenerClientesAsync(busqueda, sector);
+        
         ViewBag.BusquedaActual = busqueda;
+        ViewBag.SectorActual = sector;
+        ViewBag.Sectores = Enum.GetValues(typeof(SectorResidencial)).Cast<SectorResidencial>().ToList();
 
         // Soporte AJAX igual que Productos y Usuarios
         if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")

@@ -57,6 +57,7 @@ public class ProductosController : Controller
             return View(producto);
         }
 
+        TempData["Mensaje"] = "Producto creado correctamente.";
         return RedirectToAction(nameof(Index));
     }
 
@@ -85,6 +86,7 @@ public class ProductosController : Controller
             return View(productoEditado);
         }
 
+        TempData["Mensaje"] = "Producto actualizado correctamente.";
         return RedirectToAction(nameof(Index));
     }
 
@@ -102,6 +104,7 @@ public class ProductosController : Controller
     public async Task<IActionResult> EliminarConfirmado(int id)
     {
         await _productoService.DesactivarAsync(id);
+        TempData["Mensaje"] = "Producto desactivado correctamente.";
         return RedirectToAction(nameof(Index));
     }
 }

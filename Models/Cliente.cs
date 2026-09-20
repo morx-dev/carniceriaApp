@@ -19,6 +19,9 @@ public class Cliente
     [StringLength(255, ErrorMessage = "La dirección no puede superar los 255 caracteres.")]
     public string Direccion { get; set; } = string.Empty;
 
+    [Required(ErrorMessage = "El sector es obligatorio.")]
+    public SectorResidencial Sector { get; set; }
+
     public bool Activo { get; set; } = true;
     public DateTime FechaCreacion { get; set; } = DateTime.Now;
 }

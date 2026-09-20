@@ -3,41 +3,97 @@
     ViewData["Title"] = "Nuevo cliente";
 }
 
-<div style="background-color: #eaf4fc; min-height: 100vh; padding-top: 1.5rem; padding-bottom: 3rem; margin-top: -1rem; margin-right: calc(-.5 * var(--bs-gutter-x)); margin-left: calc(-.5 * var(--bs-gutter-x));">
-    <div class="container">
-        <h2 class="text-primary fw-bold mb-4">Nuevo cliente</h2>
+<style>
+    #clientesModule {
+        --azul: #4f8fea;
+        --azul-oscuro: #3568c2;
+        --azul-texto: #1e4976;
+        --rojo: #f16c6c;
+    }
 
-        <div class="row">
-            <div class="col-md-6">
-                <div class="card shadow-sm border-0 rounded-4 p-4 bg-white">
-                    <div class="card-body">
-                        <form asp-action="Crear" method="post">
-                            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+    #clientesModule .card-cliente {
+        border-top: 4px solid var(--azul);
+    }
 
-                            <div class="mb-3">
-                                <label asp-for="Nombre" class="form-label text-secondary fw-semibold"></label>
-                                <input asp-for="Nombre" class="form-control" placeholder="Ej. María López" />
-                                <span asp-validation-for="Nombre" class="text-danger"></span>
-                            </div>
+    #clientesModule h2.titulo-form {
+        color: var(--azul-texto);
+        border-bottom-color: #eaf2fd !important;
+    }
 
-                            <div class="mb-3">
-                                <label asp-for="Telefono" class="form-label text-secondary fw-semibold"></label>
-                                <input asp-for="Telefono" class="form-control" placeholder="Ej. 5555-1234" />
-                                <span asp-validation-for="Telefono" class="text-danger"></span>
-                            </div>
+    #clientesModule .form-control:focus,
+    #clientesModule .form-select:focus {
+        border-color: var(--azul);
+        box-shadow: 0 0 0 3px rgba(79, 143, 234, 0.18);
+    }
 
-                            <div class="mb-3">
-                                <label asp-for="Direccion" class="form-label text-secondary fw-semibold"></label>
-                                <textarea asp-for="Direccion" class="form-control" rows="2" placeholder="Ej. Residencial El Esfuerzo, casa 12"></textarea>
-                                <span asp-validation-for="Direccion" class="text-danger"></span>
-                            </div>
+    #clientesModule .btn-azul {
+        background: linear-gradient(135deg, var(--azul) 0%, var(--azul-oscuro) 100%);
+        border: none;
+        color: #fff;
+        transition: filter 0.15s ease, transform 0.15s ease;
+    }
+    #clientesModule .btn-azul:hover {
+        filter: brightness(0.95);
+        transform: translateY(-1px);
+        color: #fff;
+    }
 
-                            <div class="d-flex gap-2">
-                                <button type="submit" class="btn btn-primary px-4">Guardar</button>
-                                <a asp-action="Index" class="btn btn-secondary px-4">Cancelar</a>
-                            </div>
-                        </form>
-                    </div>
+    @@media (max-width: 480px) {
+        #clientesModule .card-cliente {
+            padding: 1.25rem !important;
+        }
+        #clientesModule .d-flex.gap-2.justify-content-end {
+            flex-direction: column-reverse;
+        }
+        #clientesModule .d-flex.gap-2.justify-content-end a,
+        #clientesModule .d-flex.gap-2.justify-content-end button {
+            width: 100%;
+            text-align: center;
+        }
+    }
+</style>
+
+<div class="container py-4" id="clientesModule">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card card-cliente shadow border-0 rounded-4 p-4 bg-white">
+                <div class="card-body">
+                    <h2 class="titulo-form fw-bold mb-4 border-bottom pb-2">Nuevo cliente</h2>
+
+                    <form asp-action="Crear" method="post">
+                        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                        <div class="mb-3">
+                            <label asp-for="Nombre" class="form-label text-dark fw-semibold"></label>
+                            <input asp-for="Nombre" class="form-control rounded-pill px-3" placeholder="Ej. María López" />
+                            <span asp-validation-for="Nombre" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Telefono" class="form-label text-dark fw-semibold"></label>
+                            <input asp-for="Telefono" class="form-control rounded-pill px-3" placeholder="Ej. 5555-1234" />
+                            <span asp-validation-for="Telefono" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Sector" class="form-label text-dark fw-semibold">Sector</label>
+                            <select asp-for="Sector" class="form-select rounded-pill px-3"
+                                    asp-items="Html.GetEnumSelectList<carniceriaApp.Models.SectorResidencial>()">
+                            </select>
+                            <span asp-validation-for="Sector" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-4">
+                            <label asp-for="Direccion" class="form-label text-dark fw-semibold"></label>
+                            <textarea asp-for="Direccion" class="form-control rounded-4 px-3" rows="2" placeholder="Ej. Residencial El Esfuerzo, casa 12"></textarea>
+                            <span asp-validation-for="Direccion" class="text-danger small"></span>
+                        </div>
+
+                        <div class="d-flex gap-2 justify-content-end">
+                            <a asp-action="Index" class="btn btn-outline-secondary rounded-pill px-4 fw-semibold">Cancelar</a>
+                            <button type="submit" class="btn btn-azul rounded-pill px-4 fw-semibold">Guardar</button>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>

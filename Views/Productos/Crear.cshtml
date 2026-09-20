@@ -3,39 +3,94 @@
     ViewData["Title"] = "Nuevo producto";
 }
 
-<h2>Nuevo producto</h2>
+<style>
+    #productosModule {
+        --azul: #4f8fea;
+        --azul-oscuro: #3568c2;
+        --azul-texto: #1e4976;
+    }
 
-<div class="row">
-    <div class="col-md-6">
-        <form asp-action="Crear" method="post">
-            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+    #productosModule .card-producto {
+        border-top: 4px solid var(--azul);
+    }
 
-            <div class="mb-3">
-                <label asp-for="Nombre" class="form-label"></label>
-                <input asp-for="Nombre" class="form-control" placeholder="Ej. Costilla de res" />
-                <span asp-validation-for="Nombre" class="text-danger"></span>
+    #productosModule h2.titulo-form {
+        color: var(--azul-texto);
+    }
+
+    #productosModule .form-control:focus,
+    #productosModule .form-select:focus {
+        border-color: var(--azul);
+        box-shadow: 0 0 0 3px rgba(79, 143, 234, 0.18);
+    }
+
+    #productosModule .btn-azul {
+        background: linear-gradient(135deg, var(--azul) 0%, var(--azul-oscuro) 100%);
+        border: none;
+        color: #fff;
+        transition: filter 0.15s ease, transform 0.15s ease;
+    }
+    #productosModule .btn-azul:hover {
+        filter: brightness(0.95);
+        transform: translateY(-1px);
+        color: #fff;
+    }
+
+    @@media (max-width: 480px) {
+        #productosModule .card-producto {
+            padding: 1.25rem !important;
+        }
+        #productosModule .form-buttons {
+            flex-direction: column-reverse;
+            gap: 0.5rem;
+        }
+        #productosModule .form-buttons .btn {
+            width: 100%;
+        }
+    }
+</style>
+
+<div class="container py-4" id="productosModule">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card card-producto shadow border-0 rounded-4 p-4 bg-white">
+                <div class="card-body">
+                    <h2 class="titulo-form fw-bold mb-4 border-bottom pb-2">Nuevo producto</h2>
+
+                    <form asp-action="Crear" method="post">
+                        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                        <div class="mb-3">
+                            <label asp-for="Nombre" class="form-label text-dark fw-semibold"></label>
+                            <input asp-for="Nombre" class="form-control rounded-pill px-3" placeholder="Ej. Costilla de res" />
+                            <span asp-validation-for="Nombre" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Categoria" class="form-label text-dark fw-semibold"></label>
+                            <select asp-for="Categoria" class="form-select rounded-pill px-3"
+                                    asp-items="Html.GetEnumSelectList<carniceriaApp.Models.CategoriaProducto>()">
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="PrecioActual" class="form-label text-dark fw-semibold">Precio (Q)</label>
+                            <input asp-for="PrecioActual" class="form-control rounded-pill px-3" type="number" step="0.01" />
+                            <span asp-validation-for="PrecioActual" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-4 form-check">
+                            <input asp-for="Activo" class="form-check-input" checked />
+                            <label asp-for="Activo" class="form-check-label"></label>
+                        </div>
+
+                        <div class="d-flex gap-2 justify-content-end form-buttons">
+                            <a asp-action="Index" class="btn btn-outline-secondary rounded-pill px-4 fw-semibold">Cancelar</a>
+                            <button type="submit" class="btn btn-azul rounded-pill px-4 fw-semibold">Guardar</button>
+                        </div>
+                    </form>
+                </div>
             </div>
-
-            <div class="mb-3">
-                <label asp-for="Categoria" class="form-label"></label>
-                <select asp-for="Categoria" class="form-select"
-                        asp-items="Html.GetEnumSelectList<carniceriaApp.Models.CategoriaProducto>()">
-                </select>
-            </div>
-
-            <div class="mb-3">
-                <label asp-for="PrecioActual" class="form-label">Precio (Q)</label>
-                <input asp-for="PrecioActual" class="form-control" type="number" step="0.01" />
-                <span asp-validation-for="PrecioActual" class="text-danger"></span>
-            </div>
-
-            <div class="mb-3 form-check">
-                <input asp-for="Activo" class="form-check-input" checked />
-                <label asp-for="Activo" class="form-check-label"></label>
-            </div>
-
-            <button type="submit" class="btn btn-primary">Guardar</button>
-            <a asp-action="Index" class="btn btn-secondary">Cancelar</a>
-        </form>
+        </div>
     </div>
 </div>

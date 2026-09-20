@@ -3,43 +3,131 @@
     ViewData["Title"] = "Clientes";
 }
 
-<div style="background-color: #eaf4fc; min-height: 100vh; padding-top: 1.5rem; padding-bottom: 3rem; margin-top: -1rem; margin-right: calc(-.5 * var(--bs-gutter-x)); margin-left: calc(-.5 * var(--bs-gutter-x));">
-    <div class="container">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <h2 class="text-primary fw-bold">Clientes</h2>
-            <a asp-action="Crear" class="btn btn-primary">+ Nuevo cliente</a>
-        </div>
+<style>
+    #clientesModule {
+        --azul: #4f8fea;
+        --azul-oscuro: #3568c2;
+        --azul-texto: #1e4976;
+        --azul-claro-bg: #eaf2fd;
+        --rojo: #f16c6c;
+        --rojo-oscuro: #d94f4f;
+        --rojo-claro-bg: #fdebeb;
+    }
 
-        @if (TempData["Mensaje"] != null)
-        {
-            <div class="alert alert-success">@TempData["Mensaje"]</div>
+    #clientesModule h2.titulo-clientes {
+        color: var(--azul-texto);
+    }
+
+    #clientesModule .btn-azul {
+        background: linear-gradient(135deg, var(--azul) 0%, var(--azul-oscuro) 100%);
+        border: none;
+        color: #fff;
+        transition: filter 0.15s ease, transform 0.15s ease;
+    }
+    #clientesModule .btn-azul:hover {
+        filter: brightness(0.95);
+        transform: translateY(-1px);
+        color: #fff;
+    }
+
+    #clientesModule #inputBusqueda,
+    #clientesModule #selectSector {
+        border: 1px solid #dbe2ea;
+    }
+    #clientesModule #inputBusqueda:focus,
+    #clientesModule #selectSector:focus {
+        border-color: var(--azul);
+        box-shadow: 0 0 0 3px rgba(79, 143, 234, 0.18);
+    }
+
+    #clientesModule .alert-success {
+        background-color: var(--azul-claro-bg);
+        border: 1px solid var(--azul);
+        color: var(--azul-texto);
+    }
+
+    @@media (max-width: 576px) {
+        #clientesModule .header-clientes {
+            flex-direction: column;
+            align-items: stretch !important;
+            gap: 0.75rem;
         }
+        #clientesModule .header-clientes .btn-azul {
+            width: 100%;
+        }
+        #clientesModule .row.g-2.mb-4 > div {
+            margin-bottom: 0.25rem;
+        }
+    }
+</style>
 
-        <div class="row g-2 mb-3">
-            <div class="col-md-5">
-                <input type="text" id="inputBusqueda" class="form-control"
-                       placeholder="Buscar por nombre o teléfono..."
-                       value="@ViewBag.BusquedaActual" autocomplete="off" autofocus />
-            </div>
-        </div>
+<div class="container py-4" id="clientesModule">
+    <div class="d-flex justify-content-between align-items-center mb-4 header-clientes">
+        <h2 class="titulo-clientes fw-bold mb-0">Clientes</h2>
+        <a asp-action="Crear" class="btn btn-azul rounded-pill px-4 shadow-sm fw-semibold">+ Nuevo cliente</a>
+    </div>
 
-        <!-- Contenedor donde se actualiza la tabla dinámicamente -->
-        <div id="contenedorTablaClientes">
-            <partial name="_TablaClientes" model="Model" />
+    @if (TempData["Mensaje"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+            @TempData["Mensaje"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
+    }
+
+    <!-- Filtros responsivos (Búsqueda y Sector) -->
+    <div class="row g-2 mb-4">
+        <div class="col-md-5">
+            <input type="text" id="inputBusqueda" class="form-control rounded-pill px-3 shadow-none"
+                   placeholder="Buscar por nombre o teléfono..."
+                   value="@ViewBag.BusquedaActual" autocomplete="off" autofocus />
+        </div>
+        <div class="col-md-4">
+            <select id="selectSector" class="form-select rounded-pill px-3 shadow-none">
+                <option value="">Todos los sectores</option>
+                @if (ViewBag.Sectores != null)
+                {
+                    @foreach (var s in (List<SectorResidencial>)ViewBag.Sectores)
+                    {
+                        int valorSector = (int)s;
+                        string nombreSector = s.GetType().GetMember(s.ToString())[0]
+                            .GetCustomAttributes(typeof(System.ComponentModel.DataAnnotations.DisplayAttribute), false)
+                            .OfType<System.ComponentModel.DataAnnotations.DisplayAttribute>()
+                            .FirstOrDefault()?.Name ?? s.ToString();
+
+                        if (ViewBag.SectorActual != null && (int)ViewBag.SectorActual == valorSector)
+                        {
+                            <option value="@valorSector" selected>Sector @nombreSector</option>
+                        }
+                        else
+                        {
+                            <option value="@valorSector">Sector @nombreSector</option>
+                        }
+                    }
+                }
+            </select>
+        </div>
+    </div>
+
+    <!-- Contenedor donde se actualiza la tabla dinámicamente -->
+    <div id="contenedorTablaClientes">
+        <partial name="_TablaClientes" model="Model" />
     </div>
 </div>
 
 @section Scripts {
     <script>
         const inputBusqueda = document.getElementById('inputBusqueda');
+        const selectSector = document.getElementById('selectSector');
         const contenedorTabla = document.getElementById('contenedorTablaClientes');
 
         let timeout = null;
 
         function realizarBusqueda() {
             const busqueda = inputBusqueda.value;
-            const url = `@Url.Action("Index", "Clientes")?busqueda=${encodeURIComponent(busqueda)}`;
+            const sector = selectSector.value;
+
+            const url = `@Url.Action("Index", "Clientes")?busqueda=${encodeURIComponent(busqueda)}&sector=${encodeURIComponent(sector)}`;
 
             fetch(url, {
                 headers: {
@@ -58,6 +146,10 @@
             timeout = setTimeout(() => {
                 realizarBusqueda();
             }, 300);
+        });
+
+        selectSector.addEventListener('change', function () {
+            realizarBusqueda();
         });
     </script>
 }

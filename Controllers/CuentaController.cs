@@ -37,6 +37,7 @@ public class CuentaController : Controller
             return View(modelo);
         }
 
+        TempData["Mensaje"] = "¡Bienvenido de nuevo!";
         return RedirectToAction(resultado.AccionDestino!, resultado.ControllerDestino!);
     }
 

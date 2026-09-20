@@ -2,8 +2,25 @@
     ViewData["Title"] = "Acceso denegado";
 }
 
-<div class="text-center mt-5">
-    <h2>Acceso denegado</h2>
-    <p>No tienes permiso para ver esta página.</p>
-    <a asp-controller="Cuenta" asp-action="Login" class="btn btn-secondary">Ir al Login</a>
+<div class="container py-5">
+    <div class="row justify-content-center align-items-center" style="min-height: 60vh;">
+        <div class="col-md-6 text-center">
+            <div class="card shadow-sm border-0 rounded-4 p-5 bg-white">
+                <div class="mb-4">
+                    <div class="rounded-circle d-inline-flex align-items-center justify-content-center shadow-sm" style="width: 75px; height: 75px; background-color: #fdebeb; border: 1px solid #f16c6c;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="#d94f4f" class="bi bi-shield-lock-fill" viewBox="0 0 16 16">
+                            <path d="M8 1c.66 0 1.39.08 2 .21V2a1 1 0 0 1 1 1v1h1a2 2 0 0 1 2 2v3.856c0 .318-.088.631-.254.904l-3.5 5.5a1 1 0 0 1-1.692 0l-3.5-5.5A1.5 1.5 0 0 1 5 8V6a2 2 0 0 1 2-2h1V3a1 1 0 0 1 1-1zm0 5a1.5 1.5 0 0 0-1.5 1.5v.5h3v-.5A1.5 1.5 0 0 0 8 6z"/>
+                        </svg>
+                    </div>
+                </div>
+                <h2 class="fw-bold mb-3" style="color: #1e4976;">Acceso denegado</h2>
+                <p class="text-muted mb-4">No tienes los permisos necesarios para ver esta página o realizar esta acción.</p>
+                <div>
+                    <a asp-controller="Cuenta" asp-action="Login" class="btn rounded-pill px-4 py-2 fw-semibold text-white shadow-sm" style="background: linear-gradient(135deg, #4f8fea 0%, #3568c2 100%);">
+                        Ir al Login
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>

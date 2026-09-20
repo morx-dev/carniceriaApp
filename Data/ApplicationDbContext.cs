@@ -22,6 +22,10 @@ public class ApplicationDbContext : IdentityDbContext<Usuario>
     {
         base.OnModelCreating(builder);
 
+        builder.Entity<Cliente>()
+            .Property(c => c.Sector)
+            .HasConversion<string>();
+
         builder.Entity<Producto>()
             .Property(p => p.Categoria)
             .HasConversion<string>();

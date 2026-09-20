@@ -3,31 +3,85 @@
     ViewData["Title"] = "Desactivar producto";
 }
 
-<div style="background-color: #eaf4fc; min-height: 100vh; padding-top: 1.5rem; padding-bottom: 3rem; margin-top: -1rem; margin-right: calc(-.5 * var(--bs-gutter-x)); margin-left: calc(-.5 * var(--bs-gutter-x));">
-    <div class="container">
-        <h2 class="text-primary fw-bold mb-3">¿Desactivar este producto?</h2>
+<style>
+    #productosModule {
+        --azul: #4f8fea;
+        --azul-texto: #1e4976;
+        --rojo: #f16c6c;
+        --rojo-oscuro: #d94f4f;
+    }
 
-        <div class="alert alert-warning shadow-sm">
-            No se elimina físicamente — solo se marca como inactivo, para no romper el historial de ventas y precios ya registrados.
-        </div>
+    #productosModule h2.titulo-eliminar {
+        color: var(--azul-texto);
+    }
 
-        <div class="card shadow-sm border-0 rounded-4 p-4 bg-white mb-3">
-            <dl class="row mb-0">
-                <dt class="col-sm-3 text-secondary">Nombre</dt>
-                <dd class="col-sm-9 fw-bold">@Model.Nombre</dd>
+    #productosModule .alert-warning {
+        background-color: #fff7e6;
+        border: 1px solid #f0c368;
+        color: #8a5d00;
+    }
 
-                <dt class="col-sm-3 text-secondary">Categoría</dt>
-                <dd class="col-sm-9">@Model.Categoria</dd>
+    #productosModule .card-detalle {
+        border-left: 4px solid var(--rojo);
+    }
 
-                <dt class="col-sm-3 text-secondary">Precio actual</dt>
-                <dd class="col-sm-9">Q@(string.Format("{0:N2}", Model.PrecioActual))</dd>
-            </dl>
-        </div>
+    #productosModule .btn-confirmar-desactivar {
+        background: linear-gradient(135deg, var(--rojo) 0%, var(--rojo-oscuro) 100%);
+        border: none;
+        color: #fff;
+        transition: filter 0.15s ease, transform 0.15s ease;
+    }
+    #productosModule .btn-confirmar-desactivar:hover {
+        filter: brightness(0.95);
+        transform: translateY(-1px);
+        color: #fff;
+    }
 
-        <form asp-action="Eliminar" method="post">
-            <input type="hidden" asp-for="Id" />
-            <button type="submit" class="btn btn-danger px-4">Sí, desactivar</button>
-            <a asp-action="Index" class="btn btn-secondary px-4">Cancelar</a>
-        </form>
+    @@media (max-width: 480px) {
+        #productosModule .card-detalle {
+            padding: 1.25rem !important;
+        }
+        #productosModule .card-detalle dl.row dt,
+        #productosModule .card-detalle dl.row dd {
+            flex: 0 0 100%;
+            max-width: 100%;
+        }
+        #productosModule .card-detalle dt {
+            margin-top: 0.5rem;
+        }
+        #productosModule .form-buttons-eliminar {
+            flex-direction: column-reverse;
+            gap: 0.5rem;
+        }
+        #productosModule .form-buttons-eliminar .btn {
+            width: 100%;
+        }
+    }
+</style>
+
+<div class="container py-4" id="productosModule">
+    <h2 class="titulo-eliminar fw-bold mb-3">¿Desactivar este producto?</h2>
+
+    <div class="alert alert-warning shadow-sm">
+        No se elimina físicamente — solo se marca como inactivo, para no romper el historial de ventas y precios ya registrados.
     </div>
+
+    <div class="card card-detalle shadow-sm border-0 rounded-4 p-4 bg-white mb-3">
+        <dl class="row mb-0">
+            <dt class="col-sm-3 text-secondary">Nombre</dt>
+            <dd class="col-sm-9 fw-bold">@Model.Nombre</dd>
+
+            <dt class="col-sm-3 text-secondary">Categoría</dt>
+            <dd class="col-sm-9">@Model.Categoria</dd>
+
+            <dt class="col-sm-3 text-secondary">Precio actual</dt>
+            <dd class="col-sm-9">Q@(string.Format("{0:N2}", Model.PrecioActual))</dd>
+        </dl>
+    </div>
+
+    <form asp-action="Eliminar" method="post" class="d-flex gap-2 form-buttons-eliminar" style="max-width: 320px;">
+        <input type="hidden" asp-for="Id" />
+        <button type="submit" class="btn btn-confirmar-desactivar rounded-pill px-4">Sí, desactivar</button>
+        <a asp-action="Index" class="btn btn-outline-secondary rounded-pill px-4">Cancelar</a>
+    </form>
 </div>
