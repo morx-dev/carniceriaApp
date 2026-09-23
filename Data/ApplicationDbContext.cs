@@ -99,7 +99,7 @@ public class ApplicationDbContext : IdentityDbContext<Usuario>
             new EstadoVenta { Id = 2, Nombre = "En preparacion" },
             new EstadoVenta { Id = 3, Nombre = "En camino" },
             new EstadoVenta { Id = 4, Nombre = "Entregado" },
-            new EstadoVenta { Id = 5, Nombre = "Cancelado" }
+            new EstadoVenta { Id = 5, Nombre = "Cancelado" } //rechazado
         );
     }
 }

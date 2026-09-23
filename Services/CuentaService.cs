@@ -56,15 +56,13 @@ public class CuentaService : ICuentaService
         if (roles.Contains("Administrador"))
             return ("Productos", "Index");
 
-        // TODO: cuando exista VentasController, cambiar a ("Ventas", "Pendientes")
         if (roles.Contains("CallCenter"))
-            return ("Clientes", "Index");
+            return ("Ventas", "Crear");
 
-        // TODO: cuando exista VentasController, cambiar a ("Ventas", "Crear")
         if (roles.Contains("Mostrador"))
-            return ("Clientes", "Index");
+            return ("Ventas", "Crear");
 
-        // TODO: cuando exista VentasController, cambiar a ("Ventas", "MisEntregas")
+        // TODO: cuando exista la acción MisEntregas en VentasController, cambiar a ("Ventas", "MisEntregas")
         if (roles.Contains("Repartidor"))
             return ("Home", "Index");
 

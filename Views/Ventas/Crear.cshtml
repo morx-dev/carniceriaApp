@@ -1,0 +1,246 @@
+@model carniceriaApp.Models.CrearVentaViewModel
+@{
+    ViewData["Title"] = "Crear venta";
+    var productos = (List<carniceriaApp.Models.Producto>)ViewBag.Productos;
+    var clientes = (List<carniceriaApp.Models.Cliente>)ViewBag.Clientes;
+    var esAdmin = User.IsInRole("Administrador");
+    var esCallCenter = User.IsInRole("CallCenter");
+}
+
+<h2>Crear venta</h2>
+
+@if (!ViewData.ModelState.IsValid)
+{
+    <div class="alert alert-danger">
+        <ul class="mb-0">
+            @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+            {
+                <li>@error.ErrorMessage</li>
+            }
+        </ul>
+    </div>
+}
+
+<form asp-action="Crear" method="post" id="formVenta">
+
+    @if (esAdmin)
+    {
+        <div class="mb-3">
+            <label class="form-label">Tipo de venta</label>
+            <div>
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="radio" name="TipoVenta" id="tipoPresencial" value="Presencial" checked onclick="toggleClienteSection(false)" />
+                    <label class="form-check-label" for="tipoPresencial">Presencial</label>
+                </div>
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="radio" name="TipoVenta" id="tipoRemota" value="Remota" onclick="toggleClienteSection(true)" />
+                    <label class="form-check-label" for="tipoRemota">Remota (WhatsApp / Llamada)</label>
+                </div>
+            </div>
+        </div>
+    }
+
+    <div id="seccionCliente" style="display: @((esCallCenter) ? "block" : "none");">
+        <div class="mb-3">
+            <label class="form-label">Filtrar por sector</label>
+            <select id="filtroSector" class="form-select">
+                <option value="">Todos los sectores</option>
+                @foreach (var sector in Enum.GetValues(typeof(carniceriaApp.Models.SectorResidencial)))
+                {
+                    <option value="@sector">Sector @sector.ToString().Replace("Sector", "")</option>
+                }
+            </select>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Cliente</label>
+            <select name="ClienteId" id="selectCliente" class="form-select">
+                <option value="">-- Selecciona un cliente --</option>
+                @foreach (var cliente in clientes)
+                {
+                    <option value="@cliente.Id" data-sector="@cliente.Sector">
+                        @cliente.Nombre - Sector @cliente.Sector.ToString().Replace("Sector", "")
+                    </option>
+                }
+            </select>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Origen del pedido</label>
+            <div>
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="radio" name="TipoOrigenSeleccionado" value="WhatsApp" checked />
+                    <label class="form-check-label">WhatsApp</label>
+                </div>
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="radio" name="TipoOrigenSeleccionado" value="Llamada" />
+                    <label class="form-check-label">Llamada</label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <hr />
+
+    <h5>Productos</h5>
+    <div class="row g-2 mb-2">
+        <div class="col-md-3">
+            <select id="filtroCategoria" class="form-select">
+                <option value="">Todas las categorías</option>
+                @foreach (var cat in Enum.GetValues(typeof(carniceriaApp.Models.CategoriaProducto)))
+                {
+                    <option value="@cat">@cat</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-4">
+            <select id="selectProducto" class="form-select">
+                <option value="">-- Selecciona un producto --</option>
+                @foreach (var producto in productos)
+                {
+                    <option value="@producto.Id" data-nombre="@producto.Nombre" data-precio="@producto.PrecioActual" data-categoria="@producto.Categoria">
+                        @producto.Nombre (Q@(producto.PrecioActual?.ToString("N2"))) — @producto.Categoria
+                    </option>
+                }
+            </select>
+        </div>
+        <div class="col-md-2">
+            <input type="number" id="inputCantidad" class="form-control" placeholder="Cantidad (lb)" step="0.01" min="0.01" />
+        </div>
+        <div class="col-md-3">
+            <button type="button" class="btn btn-outline-primary w-100" onclick="agregarProducto()">+ Agregar</button>
+        </div>
+    </div>
+
+    <table class="table table-sm">
+        <thead>
+            <tr>
+                <th>Producto</th>
+                <th>Cantidad</th>
+                <th>Precio unitario</th>
+                <th>Subtotal</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody id="cuerpoDetalle"></tbody>
+        <tfoot>
+            <tr>
+                <td colspan="3" class="text-end fw-bold">Total</td>
+                <td id="totalVenta" class="fw-bold">Q0.00</td>
+                <td></td>
+            </tr>
+        </tfoot>
+    </table>
+
+    <div id="inputsOcultos"></div>
+
+    <button type="submit" class="btn btn-primary">Guardar venta</button>
+    <a asp-controller="Home" asp-action="Index" class="btn btn-secondary">Cancelar</a>
+</form>
+
+@section Scripts {
+<script>
+    let contador = 0;
+    let total = 0;
+
+    function toggleClienteSection(mostrar) {
+        document.getElementById('seccionCliente').style.display = mostrar ? 'block' : 'none';
+    }
+
+    document.getElementById('filtroSector').addEventListener('change', function () {
+        const sectorSeleccionado = this.value;
+        const selectCliente = document.getElementById('selectCliente');
+
+        Array.from(selectCliente.options).forEach(opcion => {
+            if (!opcion.value) return;
+            opcion.hidden = sectorSeleccionado !== '' && opcion.dataset.sector !== sectorSeleccionado;
+        });
+
+        selectCliente.value = '';
+    });
+
+    document.getElementById('filtroCategoria').addEventListener('change', function () {
+        const categoriaSeleccionada = this.value;
+        const selectProducto = document.getElementById('selectProducto');
+
+        Array.from(selectProducto.options).forEach(opcion => {
+            if (!opcion.value) return;
+            opcion.hidden = categoriaSeleccionada !== '' && opcion.dataset.categoria !== categoriaSeleccionada;
+        });
+
+        selectProducto.value = '';
+    });
+
+    function agregarProducto() {
+        const select = document.getElementById('selectProducto');
+        const cantidadInput = document.getElementById('inputCantidad');
+
+        const productoId = select.value;
+        const nombre = select.options[select.selectedIndex]?.dataset.nombre;
+        const precio = parseFloat(select.options[select.selectedIndex]?.dataset.precio);
+        const cantidad = parseFloat(cantidadInput.value);
+
+        if (!productoId || isNaN(cantidad) || cantidad <= 0) {
+            alert('Selecciona un producto y una cantidad válida.');
+            return;
+        }
+
+        const subtotal = precio * cantidad;
+        total += subtotal;
+
+        const fila = document.createElement('tr');
+        fila.dataset.indice = contador;
+        fila.dataset.subtotal = subtotal;
+        fila.innerHTML = `
+            <td>${nombre}</td>
+            <td>${cantidad}</td>
+            <td>Q${precio.toFixed(2)}</td>
+            <td>Q${subtotal.toFixed(2)}</td>
+            <td><button type="button" class="btn btn-sm btn-outline-danger" onclick="eliminarFila(this)">Quitar</button></td>
+        `;
+        document.getElementById('cuerpoDetalle').appendChild(fila);
+
+        const inputsOcultos = document.getElementById('inputsOcultos');
+
+        const inputProducto = document.createElement('input');
+        inputProducto.type = 'hidden';
+        inputProducto.name = `Detalles[${contador}].ProductoId`;
+        inputProducto.value = productoId;
+        inputProducto.dataset.indice = contador;
+
+        const inputCant = document.createElement('input');
+        inputCant.type = 'hidden';
+        inputCant.name = `Detalles[${contador}].Cantidad`;
+        inputCant.value = cantidad;
+        inputCant.dataset.indice = contador;
+
+        inputsOcultos.appendChild(inputProducto);
+        inputsOcultos.appendChild(inputCant);
+
+        contador++;
+        document.getElementById('totalVenta').textContent = `Q${total.toFixed(2)}`;
+
+        select.value = '';
+        cantidadInput.value = '';
+    }
+
+    function eliminarFila(boton) {
+        const fila = boton.closest('tr');
+        const indice = fila.dataset.indice;
+        const subtotal = parseFloat(fila.dataset.subtotal);
+
+        document.querySelectorAll(`input[data-indice="${indice}"]`).forEach(el => el.remove());
+        fila.remove();
+
+        total -= subtotal;
+        document.getElementById('totalVenta').textContent = `Q${total.toFixed(2)}`;
+    }
+
+    document.getElementById('formVenta').addEventListener('submit', function (e) {
+        if (document.getElementById('cuerpoDetalle').children.length === 0) {
+            e.preventDefault();
+            alert('Agrega al menos un producto antes de guardar la venta.');
+        }
+    });
+</script>
+}
