@@ -62,9 +62,8 @@ public class CuentaService : ICuentaService
         if (roles.Contains("Mostrador"))
             return ("Ventas", "Crear");
 
-        // TODO: cuando exista la acción MisEntregas en VentasController, cambiar a ("Ventas", "MisEntregas")
         if (roles.Contains("Repartidor"))
-            return ("Home", "Index");
+            return ("Ventas", "MisEntregas");
 
         return ("Home", "Index");
     }

@@ -5,9 +5,15 @@
     var clientes = (List<carniceriaApp.Models.Cliente>)ViewBag.Clientes;
     var esAdmin = User.IsInRole("Administrador");
     var esCallCenter = User.IsInRole("CallCenter");
+    var esMostrador = User.IsInRole("Mostrador");
 }
 
 <h2>Crear venta</h2>
+
+@if (TempData["Mensaje"] != null)
+{
+    <div class="alert alert-success">@TempData["Mensaje"]</div>
+}
 
 @if (!ViewData.ModelState.IsValid)
 {
@@ -29,40 +35,34 @@
             <label class="form-label">Tipo de venta</label>
             <div>
                 <div class="form-check form-check-inline">
-                    <input class="form-check-input" type="radio" name="TipoVenta" id="tipoPresencial" value="Presencial" checked onclick="toggleClienteSection(false)" />
+                    <input class="form-check-input" type="radio" name="TipoVenta" id="tipoPresencial" value="Presencial" checked onclick="toggleTipoVenta(false)" />
                     <label class="form-check-label" for="tipoPresencial">Presencial</label>
                 </div>
                 <div class="form-check form-check-inline">
-                    <input class="form-check-input" type="radio" name="TipoVenta" id="tipoRemota" value="Remota" onclick="toggleClienteSection(true)" />
+                    <input class="form-check-input" type="radio" name="TipoVenta" id="tipoRemota" value="Remota" onclick="toggleTipoVenta(true)" />
                     <label class="form-check-label" for="tipoRemota">Remota (WhatsApp / Llamada)</label>
                 </div>
             </div>
         </div>
     }
 
-    <div id="seccionCliente" style="display: @((esCallCenter) ? "block" : "none");">
+    <!-- SECCIÓN PRESENCIAL: calculadora, sin productos -->
+    <div id="seccionPresencial" style="display: @((esMostrador || esAdmin) ? "block" : "none");">
         <div class="mb-3">
-            <label class="form-label">Filtrar por sector</label>
-            <select id="filtroSector" class="form-select">
-                <option value="">Todos los sectores</option>
-                @foreach (var sector in Enum.GetValues(typeof(carniceriaApp.Models.SectorResidencial)))
-                {
-                    <option value="@sector">Sector @sector.ToString().Replace("Sector", "")</option>
-                }
-            </select>
+            <label class="form-label">Monto total de la venta (Q)</label>
+            <input type="number" name="MontoTotalPresencial" class="form-control form-control-lg" step="0.01" min="0.01" placeholder="Ej. 56.00" />
         </div>
+    </div>
+
+    <!-- SECCIÓN REMOTA -->
+    <div id="seccionRemota" style="display: @((esCallCenter) ? "block" : "none");">
 
         <div class="mb-3">
-            <label class="form-label">Cliente</label>
-            <select name="ClienteId" id="selectCliente" class="form-select">
-                <option value="">-- Selecciona un cliente --</option>
-                @foreach (var cliente in clientes)
-                {
-                    <option value="@cliente.Id" data-sector="@cliente.Sector">
-                        @cliente.Nombre - Sector @cliente.Sector.ToString().Replace("Sector", "")
-                    </option>
-                }
-            </select>
+            <label class="form-label">Buscar cliente por dirección</label>
+            <input type="text" id="inputBuscarCliente" class="form-control" placeholder="Ej. 56 ave 6-12" autocomplete="off" />
+            <input type="hidden" name="ClienteId" id="ClienteIdHidden" />
+            <div id="resultadosClientes" class="list-group mt-1" style="max-height: 220px; overflow-y: auto;"></div>
+            <div id="clienteSeleccionado" class="mt-2 fw-bold text-success"></div>
         </div>
 
         <div class="mb-3">
@@ -78,98 +78,146 @@
                 </div>
             </div>
         </div>
+
+        <div class="form-check mb-3">
+            <input class="form-check-input" type="checkbox" id="checkSoloObservacion" onclick="toggleSoloObservacion(this.checked)" />
+            <label class="form-check-label" for="checkSoloObservacion">
+                Solo tomar nota (sin seleccionar productos)
+            </label>
+        </div>
+
+        <!-- OBSERVACIÓN -->
+        <div id="seccionObservacion" style="display: none;" class="mb-3">
+            <label class="form-label">Observación del pedido</label>
+            <textarea name="Observaciones" class="form-control" rows="3" placeholder="Ej. El cliente pide 5 rodajas de adobado, lo que pese"></textarea>
+        </div>
+
+        <!-- PRODUCTOS -->
+        <div id="seccionProductos">
+            <hr />
+            <h5>Productos</h5>
+            <div class="row g-2 mb-2">
+                <div class="col-md-3">
+                    <select id="filtroCategoria" class="form-select">
+                        <option value="">Todas las categorías</option>
+                        @foreach (var cat in Enum.GetValues(typeof(carniceriaApp.Models.CategoriaProducto)))
+                        {
+                            <option value="@cat">@cat</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <select id="selectProducto" class="form-select">
+                        <option value="">-- Selecciona un producto --</option>
+                        @foreach (var producto in productos)
+                        {
+                            <option value="@producto.Id" data-nombre="@producto.Nombre" data-precio="@producto.PrecioActual" data-categoria="@producto.Categoria">
+                                @producto.Nombre (Q@(producto.PrecioActual?.ToString("N2"))) — @producto.Categoria
+                            </option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <input type="number" id="inputCantidad" class="form-control" placeholder="Cantidad (lb)" step="0.01" min="0.01" />
+                </div>
+                <div class="col-md-3">
+                    <button type="button" class="btn btn-outline-primary w-100" onclick="agregarProducto()">+ Agregar</button>
+                </div>
+            </div>
+
+            <table class="table table-sm">
+                <thead>
+                    <tr>
+                        <th>Producto</th>
+                        <th>Cantidad</th>
+                        <th>Precio unitario</th>
+                        <th>Subtotal</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody id="cuerpoDetalle"></tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="3" class="text-end fw-bold">Total</td>
+                        <td id="totalVenta" class="fw-bold">Q0.00</td>
+                        <td></td>
+                    </tr>
+                </tfoot>
+            </table>
+
+            <div id="inputsOcultos"></div>
+        </div>
     </div>
 
-    <hr />
-
-    <h5>Productos</h5>
-    <div class="row g-2 mb-2">
-        <div class="col-md-3">
-            <select id="filtroCategoria" class="form-select">
-                <option value="">Todas las categorías</option>
-                @foreach (var cat in Enum.GetValues(typeof(carniceriaApp.Models.CategoriaProducto)))
-                {
-                    <option value="@cat">@cat</option>
-                }
-            </select>
-        </div>
-        <div class="col-md-4">
-            <select id="selectProducto" class="form-select">
-                <option value="">-- Selecciona un producto --</option>
-                @foreach (var producto in productos)
-                {
-                    <option value="@producto.Id" data-nombre="@producto.Nombre" data-precio="@producto.PrecioActual" data-categoria="@producto.Categoria">
-                        @producto.Nombre (Q@(producto.PrecioActual?.ToString("N2"))) — @producto.Categoria
-                    </option>
-                }
-            </select>
-        </div>
-        <div class="col-md-2">
-            <input type="number" id="inputCantidad" class="form-control" placeholder="Cantidad (lb)" step="0.01" min="0.01" />
-        </div>
-        <div class="col-md-3">
-            <button type="button" class="btn btn-outline-primary w-100" onclick="agregarProducto()">+ Agregar</button>
-        </div>
-    </div>
-
-    <table class="table table-sm">
-        <thead>
-            <tr>
-                <th>Producto</th>
-                <th>Cantidad</th>
-                <th>Precio unitario</th>
-                <th>Subtotal</th>
-                <th></th>
-            </tr>
-        </thead>
-        <tbody id="cuerpoDetalle"></tbody>
-        <tfoot>
-            <tr>
-                <td colspan="3" class="text-end fw-bold">Total</td>
-                <td id="totalVenta" class="fw-bold">Q0.00</td>
-                <td></td>
-            </tr>
-        </tfoot>
-    </table>
-
-    <div id="inputsOcultos"></div>
-
-    <button type="submit" class="btn btn-primary">Guardar venta</button>
-    <a asp-controller="Home" asp-action="Index" class="btn btn-secondary">Cancelar</a>
+    <button type="submit" class="btn btn-primary mt-2">Guardar venta</button>
+    <a asp-controller="Home" asp-action="Index" class="btn btn-secondary mt-2">Cancelar</a>
 </form>
 
 @section Scripts {
 <script>
+    const clientesData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+        clientes.Select(c => new { id = c.Id, nombre = c.Nombre, direccion = c.Direccion, telefono = c.Telefono })));
+
     let contador = 0;
     let total = 0;
 
-    function toggleClienteSection(mostrar) {
-        document.getElementById('seccionCliente').style.display = mostrar ? 'block' : 'none';
+    function toggleTipoVenta(esRemota) {
+        document.getElementById('seccionPresencial').style.display = esRemota ? 'none' : 'block';
+        document.getElementById('seccionRemota').style.display = esRemota ? 'block' : 'none';
     }
 
-    document.getElementById('filtroSector').addEventListener('change', function () {
-        const sectorSeleccionado = this.value;
-        const selectCliente = document.getElementById('selectCliente');
+    function toggleSoloObservacion(soloObservacion) {
+        document.getElementById('seccionObservacion').style.display = soloObservacion ? 'block' : 'none';
+        document.getElementById('seccionProductos').style.display = soloObservacion ? 'none' : 'block';
+    }
 
-        Array.from(selectCliente.options).forEach(opcion => {
-            if (!opcion.value) return;
-            opcion.hidden = sectorSeleccionado !== '' && opcion.dataset.sector !== sectorSeleccionado;
+    // Buscador de clientes por dirección
+    const inputBuscarCliente = document.getElementById('inputBuscarCliente');
+    const resultadosClientes = document.getElementById('resultadosClientes');
+    const clienteIdHidden = document.getElementById('ClienteIdHidden');
+    const clienteSeleccionadoDiv = document.getElementById('clienteSeleccionado');
+
+    if (inputBuscarCliente) {
+        inputBuscarCliente.addEventListener('input', function () {
+            const texto = this.value.trim().toLowerCase();
+            resultadosClientes.innerHTML = '';
+            clienteIdHidden.value = '';
+            clienteSeleccionadoDiv.textContent = '';
+
+            if (texto.length < 2) return;
+
+            const coincidencias = clientesData.filter(c => c.direccion.toLowerCase().includes(texto));
+
+            coincidencias.slice(0, 15).forEach(c => {
+                const item = document.createElement('button');
+                item.type = 'button';
+                item.className = 'list-group-item list-group-item-action';
+                item.innerHTML = `<strong>${c.nombre}</strong><br><small>${c.direccion} — ${c.telefono}</small>`;
+                item.onclick = () => {
+                    clienteIdHidden.value = c.id;
+                    clienteSeleccionadoDiv.textContent = `Cliente seleccionado: ${c.nombre} (${c.direccion})`;
+                    resultadosClientes.innerHTML = '';
+                    inputBuscarCliente.value = '';
+                };
+                resultadosClientes.appendChild(item);
+            });
         });
+    }
 
-        selectCliente.value = '';
-    });
+    const filtroCategoria = document.getElementById('filtroCategoria');
+    if (filtroCategoria) {
+        filtroCategoria.addEventListener('change', function () {
+            const categoriaSeleccionada = this.value;
+            const selectProducto = document.getElementById('selectProducto');
 
-    document.getElementById('filtroCategoria').addEventListener('change', function () {
-        const categoriaSeleccionada = this.value;
-        const selectProducto = document.getElementById('selectProducto');
+            Array.from(selectProducto.options).forEach(opcion => {
+                if (!opcion.value) return;
+                opcion.hidden = categoriaSeleccionada !== '' && opcion.dataset.categoria !== categoriaSeleccionada;
+            });
 
-        Array.from(selectProducto.options).forEach(opcion => {
-            if (!opcion.value) return;
-            opcion.hidden = categoriaSeleccionada !== '' && opcion.dataset.categoria !== categoriaSeleccionada;
+            selectProducto.value = '';
         });
-
-        selectProducto.value = '';
-    });
+    }
 
     function agregarProducto() {
         const select = document.getElementById('selectProducto');
@@ -237,6 +285,12 @@
     }
 
     document.getElementById('formVenta').addEventListener('submit', function (e) {
+        const esRemota = document.getElementById('seccionRemota').style.display === 'block';
+        if (!esRemota) return; // presencial no necesita esta validación
+
+        const soloObservacion = document.getElementById('checkSoloObservacion')?.checked;
+        if (soloObservacion) return; // no requiere productos
+
         if (document.getElementById('cuerpoDetalle').children.length === 0) {
             e.preventDefault();
             alert('Agrega al menos un producto antes de guardar la venta.');

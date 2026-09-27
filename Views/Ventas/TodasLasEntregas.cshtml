@@ -1,0 +1,45 @@
+@model List<carniceriaApp.Models.Venta>
+@{
+    ViewData["Title"] = "Todas las entregas";
+    var nombresRepartidores = (Dictionary<string, string>)ViewBag.NombresRepartidores;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="mb-0">Todas las entregas en camino</h2>
+    <button type="button" class="btn btn-outline-secondary" onclick="location.reload()">
+        🔄 Actualizar
+    </button>
+</div>
+
+@if (!Model.Any())
+{
+    <p class="text-muted">No hay pedidos en camino en este momento.</p>
+}
+
+@foreach (var venta in Model)
+{
+    var nombreRepartidor = venta.RepartidorId != null && nombresRepartidores.ContainsKey(venta.RepartidorId)
+        ? nombresRepartidores[venta.RepartidorId]
+        : "Sin asignar";
+
+    <div class="card mb-3">
+        <div class="card-body">
+            <div class="d-flex justify-content-between">
+                <h5 class="card-title">@(venta.Cliente?.Nombre ?? "Cliente sin nombre")</h5>
+                <span class="fw-bold">Q@(venta.Total.ToString("N2"))</span>
+            </div>
+            <p class="mb-1"><strong>Dirección:</strong> @venta.Cliente?.Direccion</p>
+            <p class="mb-1"><strong>Repartidor:</strong> <span class="badge bg-info text-dark">@nombreRepartidor</span></p>
+
+            @if (venta.Detalles.Any())
+            {
+                <ul class="mb-0">
+                    @foreach (var det in venta.Detalles)
+                    {
+                        <li>@det.Producto?.Nombre — @det.Cantidad lb</li>
+                    }
+                </ul>
+            }
+        </div>
+    </div>
+}

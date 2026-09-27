@@ -1,0 +1,171 @@
+@model carniceriaApp.Models.Venta
+@{
+    ViewData["Title"] = "Editar pedido";
+    var productos = (List<carniceriaApp.Models.Producto>)ViewBag.Productos;
+}
+
+<h2>Editar pedido — @(Model.Cliente?.Nombre ?? "Sin cliente")</h2>
+<p class="text-muted">@Model.Cliente?.Direccion</p>
+
+<form asp-action="Editar" asp-route-id="@Model.Id" method="post" id="formEditar">
+
+    <div class="mb-3">
+        <label class="form-label">Observaciones</label>
+        <textarea name="Observaciones" class="form-control" rows="3" placeholder="Ej. El cliente pide 5 rodajas de adobado, lo que pese">@Model.Observaciones</textarea>
+    </div>
+
+    <hr />
+
+    <h5>Productos</h5>
+    <div class="row g-2 mb-2">
+        <div class="col-md-3">
+            <select id="filtroCategoria" class="form-select">
+                <option value="">Todas las categorías</option>
+                @foreach (var cat in Enum.GetValues(typeof(carniceriaApp.Models.CategoriaProducto)))
+                {
+                    <option value="@cat">@cat</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-4">
+            <select id="selectProducto" class="form-select">
+                <option value="">-- Selecciona un producto --</option>
+                @foreach (var producto in productos)
+                {
+                    <option value="@producto.Id" data-nombre="@producto.Nombre" data-precio="@producto.PrecioActual" data-categoria="@producto.Categoria">
+                        @producto.Nombre (Q@(producto.PrecioActual?.ToString("N2"))) — @producto.Categoria
+                    </option>
+                }
+            </select>
+        </div>
+        <div class="col-md-2">
+            <input type="number" id="inputCantidad" class="form-control" placeholder="Cantidad (lb)" step="0.01" min="0.01" />
+        </div>
+        <div class="col-md-3">
+            <button type="button" class="btn btn-outline-primary w-100" onclick="agregarProducto()">+ Agregar</button>
+        </div>
+    </div>
+
+    <table class="table table-sm">
+        <thead>
+            <tr>
+                <th>Producto</th>
+                <th>Cantidad</th>
+                <th>Precio unitario</th>
+                <th>Subtotal</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody id="cuerpoDetalle"></tbody>
+        <tfoot>
+            <tr>
+                <td colspan="3" class="text-end fw-bold">Total</td>
+                <td id="totalVenta" class="fw-bold">Q0.00</td>
+                <td></td>
+            </tr>
+        </tfoot>
+    </table>
+
+    <div id="inputsOcultos"></div>
+
+    <button type="submit" class="btn btn-primary">Guardar cambios</button>
+    <a asp-action="Pendientes" class="btn btn-secondary">Cancelar</a>
+</form>
+
+@section Scripts {
+<script>
+    const detallesExistentes = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+        Model.Detalles.Select(d => new {
+            productoId = d.ProductoId,
+            nombre = d.Producto != null ? d.Producto.Nombre : "",
+            precio = d.PrecioUnitario,
+            cantidad = d.Cantidad
+        })));
+
+    let contador = 0;
+    let total = 0;
+
+    function crearFila(productoId, nombre, precio, cantidad) {
+        const subtotal = precio * cantidad;
+        total += subtotal;
+
+        const fila = document.createElement('tr');
+        fila.dataset.indice = contador;
+        fila.dataset.subtotal = subtotal;
+        fila.innerHTML = `
+            <td>${nombre}</td>
+            <td>${cantidad}</td>
+            <td>Q${precio.toFixed(2)}</td>
+            <td>Q${subtotal.toFixed(2)}</td>
+            <td><button type="button" class="btn btn-sm btn-outline-danger" onclick="eliminarFila(this)">Quitar</button></td>
+        `;
+        document.getElementById('cuerpoDetalle').appendChild(fila);
+
+        const inputsOcultos = document.getElementById('inputsOcultos');
+
+        const inputProducto = document.createElement('input');
+        inputProducto.type = 'hidden';
+        inputProducto.name = `Detalles[${contador}].ProductoId`;
+        inputProducto.value = productoId;
+        inputProducto.dataset.indice = contador;
+
+        const inputCant = document.createElement('input');
+        inputCant.type = 'hidden';
+        inputCant.name = `Detalles[${contador}].Cantidad`;
+        inputCant.value = cantidad;
+        inputCant.dataset.indice = contador;
+
+        inputsOcultos.appendChild(inputProducto);
+        inputsOcultos.appendChild(inputCant);
+
+        contador++;
+        document.getElementById('totalVenta').textContent = `Q${total.toFixed(2)}`;
+    }
+
+    detallesExistentes.forEach(d => crearFila(d.productoId, d.nombre, d.precio, d.cantidad));
+
+    document.getElementById('filtroCategoria').addEventListener('change', function () {
+        const categoriaSeleccionada = this.value;
+        const selectProducto = document.getElementById('selectProducto');
+
+        Array.from(selectProducto.options).forEach(opcion => {
+            if (!opcion.value) return;
+            opcion.hidden = categoriaSeleccionada !== '' && opcion.dataset.categoria !== categoriaSeleccionada;
+        });
+
+        selectProducto.value = '';
+    });
+
+    function agregarProducto() {
+        const select = document.getElementById('selectProducto');
+        const cantidadInput = document.getElementById('inputCantidad');
+
+        const productoId = select.value;
+        const nombre = select.options[select.selectedIndex]?.dataset.nombre;
+        const precio = parseFloat(select.options[select.selectedIndex]?.dataset.precio);
+        const cantidad = parseFloat(cantidadInput.value);
+
+        if (!productoId || isNaN(cantidad) || cantidad <= 0) {
+            alert('Selecciona un producto y una cantidad válida.');
+            return;
+        }
+
+        crearFila(productoId, nombre, precio, cantidad);
+
+        select.value = '';
+        cantidadInput.value = '';
+    }
+
+    function eliminarFila(boton) {
+        const fila = boton.closest('tr');
+        const indice = fila.dataset.indice;
+        const subtotal = parseFloat(fila.dataset.subtotal);
+
+        document.querySelectorAll(`input[data-indice="${indice}"]`).forEach(el => el.remove());
+        fila.remove();
+
+        total -= subtotal;
+        document.getElementById('totalVenta').textContent = `Q${total.toFixed(2)}`;
+    }
+</script>
+}

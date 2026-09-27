@@ -33,6 +33,9 @@
                                 <li class="nav-item">
                                     <a class="nav-link text-dark" asp-controller="Reportes" asp-action="CuadreDiario">Cuadres</a>
                                 </li>
+                                <li class="nav-item">
+                                    <a class="nav-link text-dark" asp-controller="Ventas" asp-action="TodasLasEntregas">Entregas</a>
+                                </li>
                             }
 
                             @if (User.IsInRole("Administrador") || User.IsInRole("CallCenter") || User.IsInRole("Mostrador"))
@@ -42,7 +45,7 @@
                                 </li>
                             }
 
-                            @if (User.IsInRole("Administrador") || User.IsInRole("CallCenter"))
+                            @if (User.IsInRole("Administrador") || User.IsInRole("CallCenter") || User.IsInRole("Mostrador"))
                             {
                                 <li class="nav-item">
                                     <a class="nav-link text-dark" asp-controller="Ventas" asp-action="Pendientes">Pedidos pendientes</a>
@@ -56,7 +59,7 @@
                                 </li>
                             }
 
-                            @if (User.IsInRole("Administrador") || User.IsInRole("Repartidor"))
+                            @if (User.IsInRole("Repartidor"))
                             {
                                 <li class="nav-item">
                                     <a class="nav-link text-dark" asp-controller="Ventas" asp-action="MisEntregas">Mis entregas</a>
