@@ -9,7 +9,7 @@ html {
 }
 
 .btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
-  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
+  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #B01E3C;
 }
 
 html {
@@ -28,4 +28,344 @@ body {
 
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
   text-align: start;
+}
+
+/* ============================================================
+   SISTEMA DE DISEÑO — Carnicería El Esfuerzo
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+    --paper: #F7F1E6;
+    --paper-2: #FFFFFF;
+    --ink: #2A211C;
+    --ink-soft: #6B5D52;
+    --oxblood: #B01E3C;
+    --oxblood-dark: #841731;
+    --oxblood-light: #E14B62;
+    --mustard: #D9A441;
+    --sage: #4F7A52;
+    --danger: #B23A3A;
+    --border: #E4D9C8;
+    --font-display: 'Zilla Slab', Georgia, serif;
+    --font-body: 'Inter', -apple-system, sans-serif;
+}
+
+body {
+    font-family: var(--font-body);
+    color: var(--ink);
+    background-color: var(--paper);
+}
+
+h1, h2, h3, h4, .brand-font {
+    font-family: var(--font-display);
+}
+
+/* ===== Pantallas de autenticación (Login / AccesoDenegado) ===== */
+
+.auth-shell {
+    min-height: 100vh;
+    display: grid;
+    grid-template-columns: 1fr;
+}
+
+.auth-brand {
+    display: none;
+    background-color: var(--oxblood);
+    background-image:
+        repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0px, rgba(255, 255, 255, 0.08) 1px, transparent 1px, transparent 24px),
+        radial-gradient(circle at 25% 15%, var(--oxblood-light), var(--oxblood) 65%);
+    color: var(--paper);
+    align-items: center;
+    justify-content: center;
+    padding: 3rem;
+}
+
+.auth-brand__inner {
+    max-width: 380px;
+    text-align: center;
+}
+
+.auth-brand__logo {
+    height: 110px;
+    width: auto;
+    display: block;
+    margin: 0 auto 1.75rem;
+    filter: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.28));
+}
+
+.auth-brand__title {
+    font-size: 2.75rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    margin-bottom: 0.75rem;
+    color: var(--paper);
+}
+
+.auth-brand__tagline {
+    font-size: 1.05rem;
+    color: rgba(247, 241, 230, 0.92);
+    line-height: 1.6;
+    margin: 0;
+}
+
+/* Tarjeta de marca compacta para móvil (reemplaza el bloque horizontal anterior) */
+.auth-mobile-hero {
+    background-color: var(--oxblood);
+    background-image:
+        repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0px, rgba(255, 255, 255, 0.08) 1px, transparent 1px, transparent 22px),
+        radial-gradient(circle at 25% 15%, var(--oxblood-light), var(--oxblood) 70%);
+    border-radius: 24px;
+    padding: 2.25rem 1.5rem 2rem;
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.auth-mobile-hero img {
+    height: 84px;
+    width: auto;
+    display: block;
+    margin: 0 auto 1rem;
+    filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.3));
+}
+
+.auth-mobile-hero h1 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 1.6rem;
+    color: var(--paper);
+    margin-bottom: 0.35rem;
+}
+
+.auth-mobile-hero p {
+    color: rgba(247, 241, 230, 0.9);
+    font-size: 0.88rem;
+    margin: 0;
+    line-height: 1.5;
+}
+
+.auth-form-panel {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 2rem 1.25rem 3rem;
+    background-color: var(--paper-2);
+}
+
+.auth-card {
+    width: 100%;
+    max-width: 380px;
+}
+
+.auth-card__title {
+    font-size: 1.65rem;
+    font-weight: 600;
+    margin-bottom: 0.35rem;
+    color: var(--ink);
+}
+
+.auth-card__subtitle {
+    color: var(--ink-soft);
+    margin-bottom: 2rem;
+    font-size: 0.95rem;
+}
+
+.auth-field {
+    margin-bottom: 1.25rem;
+}
+
+.auth-field label {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--ink);
+    margin-bottom: 0.4rem;
+}
+
+.auth-input {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.auth-input i {
+    position: absolute;
+    left: 14px;
+    color: var(--ink-soft);
+    font-size: 1.05rem;
+    pointer-events: none;
+}
+
+.auth-input input {
+    width: 100%;
+    padding: 0.75rem 1rem 0.75rem 2.6rem;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    font-family: var(--font-body);
+    font-size: 0.95rem;
+    background-color: var(--paper);
+    color: var(--ink);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+}
+
+.auth-input input:focus {
+    outline: none;
+    border-color: var(--oxblood);
+    background-color: var(--paper-2);
+    box-shadow: 0 0 0 3px rgba(176, 30, 60, 0.14);
+}
+
+.auth-field__error {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--danger);
+    margin-top: 0.35rem;
+}
+
+.auth-form__error:not(:empty) {
+    background-color: #FBEAEA;
+    border: 1px solid #F0C4C4;
+    color: var(--danger);
+    padding: 0.65rem 0.9rem;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    margin-bottom: 1.25rem;
+}
+
+.auth-field--check {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    margin-bottom: 1.75rem;
+}
+
+.auth-field--check input[type="checkbox"] {
+    width: 1.1rem;
+    height: 1.1rem;
+    accent-color: var(--oxblood);
+    cursor: pointer;
+}
+
+.auth-field--check label {
+    margin: 0;
+    font-weight: 400;
+    font-size: 0.9rem;
+    color: var(--ink-soft);
+    cursor: pointer;
+}
+
+.auth-submit {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    background-color: var(--oxblood);
+    color: var(--paper-2);
+    border: none;
+    border-radius: 10px;
+    padding: 0.85rem 1rem;
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background-color 0.15s ease, transform 0.1s ease;
+}
+
+.auth-submit:hover {
+    background-color: var(--oxblood-dark);
+}
+
+.auth-submit:active {
+    transform: translateY(1px);
+}
+
+@media (min-width: 992px) {
+    .auth-shell {
+        grid-template-columns: 1.1fr 1fr;
+    }
+
+    .auth-brand {
+        display: flex;
+    }
+
+    .auth-mobile-hero {
+        display: none;
+    }
+
+    .auth-form-panel {
+        align-items: center;
+        min-height: 100vh;
+    }
+}
+
+/* ===== Tarjeta de estado (Acceso denegado, y reutilizable para vacíos/errores) ===== */
+
+.status-shell {
+    min-height: calc(100vh - 130px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1.25rem;
+}
+
+.status-card {
+    width: 100%;
+    max-width: 420px;
+    text-align: center;
+    background-color: var(--paper-2);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 2.75rem 2rem;
+}
+
+.status-card__icon {
+    width: 68px;
+    height: 68px;
+    margin: 0 auto 1.5rem;
+    border-radius: 50%;
+    background-color: #FBEAEA;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.status-card__icon i {
+    font-size: 1.75rem;
+    color: var(--danger);
+}
+
+.status-card__title {
+    font-size: 1.4rem;
+    font-weight: 600;
+    margin-bottom: 0.6rem;
+    color: var(--ink);
+}
+
+.status-card__text {
+    color: var(--ink-soft);
+    margin-bottom: 1.75rem;
+    font-size: 0.95rem;
+    line-height: 1.6;
+}
+
+.status-card__action {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background-color: var(--oxblood);
+    color: var(--paper-2);
+    border: none;
+    border-radius: 999px;
+    padding: 0.7rem 1.75rem;
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-decoration: none;
+    transition: background-color 0.15s ease;
+}
+
+.status-card__action:hover {
+    background-color: var(--oxblood-dark);
+    color: var(--paper-2);
 }

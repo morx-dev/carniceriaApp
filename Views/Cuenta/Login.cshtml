@@ -1,67 +1,61 @@
 @model carniceriaApp.Models.LoginViewModel
 @{
     ViewData["Title"] = "Iniciar sesión";
+    Layout = "_Layout";
 }
 
-<style>
-    .login-module {
-        --azul: #4f8fea;
-        --azul-oscuro: #3568c2;
-        --azul-texto: #1e4976;
-    }
-    .login-module .btn-azul {
-        background: linear-gradient(135deg, var(--azul) 0%, var(--azul-oscuro) 100%);
-        border: none;
-        color: #fff;
-        transition: filter 0.15s ease, transform 0.15s ease;
-    }
-    .login-module .btn-azul:hover {
-        filter: brightness(0.95);
-        transform: translateY(-1px);
-        color: #fff;
-    }
-    .login-module .form-control:focus {
-        border-color: var(--azul);
-        box-shadow: 0 0 0 3px rgba(79, 143, 234, 0.18);
-    }
-</style>
-
-<div class="container py-5 login-module">
-    <div class="row justify-content-center align-items-center py-4">
-        <div class="col-md-5 col-sm-9 col-lg-4">
-            <div class="card shadow-sm border-0 rounded-4 p-4 bg-white">
-                <div class="card-body">
-                    <div class="text-center mb-4">
-                        <img src="~/images/logo_carniceria.png" alt="Carnicería El Esfuerzo" class="img-fluid" style="max-height: 90px;" />
-                    </div>
-                    
-                    <h3 class="mb-4 text-center fw-bold" style="color: var(--azul-texto);">Iniciar sesión</h3>
-                    
-                    <form asp-action="Login" method="post">
-                        <input type="hidden" asp-for="@ViewData["ReturnUrl"]" name="returnUrl" />
-                        <div asp-validation-summary="ModelOnly" class="text-danger mb-3 small"></div>
-
-                        <div class="mb-3">
-                            <label asp-for="Email" class="form-label text-secondary fw-semibold small"></label>
-                            <input asp-for="Email" class="form-control rounded-pill px-3 shadow-none border-secondary-subtle" />
-                            <span asp-validation-for="Email" class="text-danger small"></span>
-                        </div>
-
-                        <div class="mb-3">
-                            <label asp-for="Password" class="form-label text-secondary fw-semibold small"></label>
-                            <input asp-for="Password" type="password" class="form-control rounded-pill px-3 shadow-none border-secondary-subtle" />
-                            <span asp-validation-for="Password" class="text-danger small"></span>
-                        </div>
-
-                        <div class="mb-3 form-check">
-                            <input asp-for="RecordarMe" class="form-check-input shadow-none" />
-                            <label asp-for="RecordarMe" class="form-check-label text-secondary small"></label>
-                        </div>
-
-                        <button type="submit" class="btn btn-azul w-100 rounded-pill py-2 fw-semibold shadow-sm">Entrar</button>
-                    </form>
-                </div>
-            </div>
+<div class="auth-shell">
+    <aside class="auth-brand">
+        <div class="auth-brand__inner">
+            <img src="~/images/logo_carniceria.png" alt="Carnicería El Esfuerzo" class="auth-brand__logo" />
+            <h1 class="auth-brand__title">El Esfuerzo</h1>
+            <p class="auth-brand__tagline">Sistema de gestión de pedidos, ventas y entregas.</p>
         </div>
-    </div>
+    </aside>
+
+    <main class="auth-form-panel">
+        <div class="auth-card">
+            <div class="auth-mobile-hero">
+                <img src="~/images/logo_carniceria.png" alt="Carnicería El Esfuerzo" />
+                <h1>El Esfuerzo</h1>
+                <p>Sistema de gestión de pedidos, ventas y entregas.</p>
+            </div>
+
+            <h2 class="auth-card__title">Bienvenido</h2>
+            <p class="auth-card__subtitle">Ingresa tus datos para continuar</p>
+
+            <form asp-action="Login" method="post" novalidate>
+                <input type="hidden" asp-for="@ViewData["ReturnUrl"]" name="returnUrl" />
+                <div asp-validation-summary="ModelOnly" class="auth-form__error"></div>
+
+                <div class="auth-field">
+                    <label asp-for="Email"></label>
+                    <div class="auth-input">
+                        <i class="bi bi-envelope"></i>
+                        <input asp-for="Email" placeholder="tucorreo@ejemplo.com" autocomplete="username" />
+                    </div>
+                    <span asp-validation-for="Email" class="auth-field__error"></span>
+                </div>
+
+                <div class="auth-field">
+                    <label asp-for="Password"></label>
+                    <div class="auth-input">
+                        <i class="bi bi-lock"></i>
+                        <input asp-for="Password" type="password" placeholder="••••••••" autocomplete="current-password" />
+                    </div>
+                    <span asp-validation-for="Password" class="auth-field__error"></span>
+                </div>
+
+                <div class="auth-field auth-field--check">
+                    <input asp-for="RecordarMe" />
+                    <label asp-for="RecordarMe"></label>
+                </div>
+
+                <button type="submit" class="auth-submit">
+                    Entrar
+                    <i class="bi bi-arrow-right"></i>
+                </button>
+            </form>
+        </div>
+    </main>
 </div>

@@ -5,106 +5,124 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - carniceriaApp</title>
     <script type="importmap"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/carniceriaApp.styles.css" asp-append-version="true" />
 </head>
 <body>
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Cuenta" asp-action="Login">carniceriaApp</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        @if (User.Identity != null && User.Identity.IsAuthenticated)
-                        {
-                            @if (User.IsInRole("Administrador"))
+    @{
+        var controladorActual = ViewContext.RouteData.Values["controller"]?.ToString();
+        var accionActual = ViewContext.RouteData.Values["action"]?.ToString();
+        var esPantallaLogin = controladorActual == "Cuenta" && accionActual == "Login";
+    }
+
+    @if (!esPantallaLogin)
+    {
+        <header>
+            <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
+                <div class="container-fluid">
+                    <a class="navbar-brand brand-font" asp-area="" asp-controller="Cuenta" asp-action="Login" style="color: var(--oxblood); font-weight: 700;">carniceriaApp</a>
+                    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
+                            aria-expanded="false" aria-label="Toggle navigation">
+                        <span class="navbar-toggler-icon"></span>
+                    </button>
+                    <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
+                        <ul class="navbar-nav flex-grow-1">
+                            @if (User.Identity != null && User.Identity.IsAuthenticated)
                             {
-                                <li class="nav-item">
-                                    <a class="nav-link text-dark" asp-controller="Productos" asp-action="Index">Productos</a>
+                                @if (User.IsInRole("Administrador"))
+                                {
+                                    <li class="nav-item">
+                                        <a class="nav-link text-dark" asp-controller="Productos" asp-action="Index">Productos</a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a class="nav-link text-dark" asp-controller="Usuarios" asp-action="Index">Usuarios</a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a class="nav-link text-dark" asp-controller="Reportes" asp-action="CuadreDiario">Cuadres</a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a class="nav-link text-dark" asp-controller="Ventas" asp-action="TodasLasEntregas">Entregas</a>
+                                    </li>
+                                }
+
+                                @if (User.IsInRole("Administrador") || User.IsInRole("CallCenter") || User.IsInRole("Mostrador"))
+                                {
+                                    <li class="nav-item">
+                                        <a class="nav-link text-dark" asp-controller="Clientes" asp-action="Index">Clientes</a>
+                                    </li>
+                                }
+
+                                @if (User.IsInRole("Administrador") || User.IsInRole("CallCenter") || User.IsInRole("Mostrador"))
+                                {
+                                    <li class="nav-item">
+                                        <a class="nav-link text-dark" asp-controller="Ventas" asp-action="Pendientes">Pedidos pendientes</a>
+                                    </li>
+                                }
+
+                                @if (User.IsInRole("Administrador") || User.IsInRole("Mostrador") || User.IsInRole("CallCenter"))
+                                {
+                                    <li class="nav-item">
+                                        <a class="nav-link text-dark" asp-controller="Ventas" asp-action="Crear">Crear venta</a>
+                                    </li>
+                                }
+
+                                @if (User.IsInRole("Repartidor"))
+                                {
+                                    <li class="nav-item">
+                                        <a class="nav-link text-dark" asp-controller="Ventas" asp-action="MisEntregas">Mis entregas</a>
+                                    </li>
+                                }
+                            }
+                        </ul>
+
+                        <ul class="navbar-nav">
+                            @if (User.Identity != null && User.Identity.IsAuthenticated)
+                            {
+                                var nombreUsuario = User.FindFirst("NombreCompleto")?.Value ?? User.Identity.Name;
+
+                                <li class="nav-item d-flex align-items-center me-3">
+                                    <span class="text-dark">Hola, @nombreUsuario</span>
                                 </li>
                                 <li class="nav-item">
-                                    <a class="nav-link text-dark" asp-controller="Usuarios" asp-action="Index">Usuarios</a>
-                                </li>
-                                <li class="nav-item">
-                                    <a class="nav-link text-dark" asp-controller="Reportes" asp-action="CuadreDiario">Cuadres</a>
-                                </li>
-                                <li class="nav-item">
-                                    <a class="nav-link text-dark" asp-controller="Ventas" asp-action="TodasLasEntregas">Entregas</a>
+                                    <form asp-controller="Cuenta" asp-action="Logout" method="post" class="form-inline">
+                                        <button type="submit" class="btn btn-link nav-link text-dark">Cerrar sesión</button>
+                                    </form>
                                 </li>
                             }
-
-                            @if (User.IsInRole("Administrador") || User.IsInRole("CallCenter") || User.IsInRole("Mostrador"))
+                            else
                             {
                                 <li class="nav-item">
-                                    <a class="nav-link text-dark" asp-controller="Clientes" asp-action="Index">Clientes</a>
+                                    <a class="nav-link text-dark" asp-controller="Cuenta" asp-action="Login">Iniciar sesión</a>
                                 </li>
                             }
-
-                            @if (User.IsInRole("Administrador") || User.IsInRole("CallCenter") || User.IsInRole("Mostrador"))
-                            {
-                                <li class="nav-item">
-                                    <a class="nav-link text-dark" asp-controller="Ventas" asp-action="Pendientes">Pedidos pendientes</a>
-                                </li>
-                            }
-
-                            @if (User.IsInRole("Administrador") || User.IsInRole("Mostrador") || User.IsInRole("CallCenter"))
-                            {
-                                <li class="nav-item">
-                                    <a class="nav-link text-dark" asp-controller="Ventas" asp-action="Crear">Crear venta</a>
-                                </li>
-                            }
-
-                            @if (User.IsInRole("Repartidor"))
-                            {
-                                <li class="nav-item">
-                                    <a class="nav-link text-dark" asp-controller="Ventas" asp-action="MisEntregas">Mis entregas</a>
-                                </li>
-                            }
-                        }
-                    </ul>
-
-                    <ul class="navbar-nav">
-                        @if (User.Identity != null && User.Identity.IsAuthenticated)
-                        {
-                            var nombreUsuario = User.FindFirst("NombreCompleto")?.Value ?? User.Identity.Name;
-
-                            <li class="nav-item d-flex align-items-center me-3">
-                                <span class="text-dark">Hola, @nombreUsuario</span>
-                            </li>
-                            <li class="nav-item">
-                                <form asp-controller="Cuenta" asp-action="Logout" method="post" class="form-inline">
-                                    <button type="submit" class="btn btn-link nav-link text-dark">Cerrar sesión</button>
-                                </form>
-                            </li>
-                        }
-                        else
-                        {
-                            <li class="nav-item">
-                                <a class="nav-link text-dark" asp-controller="Cuenta" asp-action="Login">Iniciar sesión</a>
-                            </li>
-                        }
-                    </ul>
+                        </ul>
+                    </div>
                 </div>
-            </div>
-        </nav>
-    </header>
-    <div class="container">
-        <main role="main" class="pb-3">
-            @RenderBody()
-        </main>
-    </div>
+            </nav>
+        </header>
+    }
 
-    <footer class="border-top footer text-muted">
-        <div class="container text-center">
-            &copy; 2026 - carniceriaApp
+    @if (esPantallaLogin)
+    {
+        @RenderBody()
+    }
+    else
+    {
+        <div class="container">
+            <main role="main" class="pb-3">
+                @RenderBody()
+            </main>
         </div>
-    </footer>
-    
+
+        <footer class="border-top footer text-muted">
+            <div class="container text-center">
+                &copy; 2026 - carniceriaApp
+            </div>
+        </footer>
+    }
+
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
