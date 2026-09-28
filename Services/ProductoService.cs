@@ -38,18 +38,29 @@ public class ProductoService : IProductoService
 
     public async Task<ResultadoOperacion> CrearAsync(Producto producto)
     {
+        producto.Nombre = producto.Nombre?.Trim() ?? string.Empty;
+
+        if (string.IsNullOrWhiteSpace(producto.Nombre))
+        {
+            return new ResultadoOperacion { Exitoso = false, MensajeError = "El nombre del producto es obligatorio." };
+        }
+
+        if (producto.PrecioActual == null || producto.PrecioActual <= 0)
+        {
+            return new ResultadoOperacion { Exitoso = false, MensajeError = "El precio debe ser mayor a cero." };
+        }
+
         bool existeDuplicado = await _context.Productos.AnyAsync(p =>
             p.Activo &&
             p.Nombre.ToLower() == producto.Nombre.ToLower() &&
-            p.Categoria == producto.Categoria &&
-            p.PrecioActual == producto.PrecioActual);
+            p.Categoria == producto.Categoria);
 
         if (existeDuplicado)
         {
             return new ResultadoOperacion
             {
                 Exitoso = false,
-                MensajeError = "Ya existe un producto activo registrado con el mismo nombre, categoría y precio."
+                MensajeError = "Ya existe un producto activo registrado con el mismo nombre y categoría."
             };
         }
 
@@ -61,26 +72,42 @@ public class ProductoService : IProductoService
 
     public async Task<ResultadoOperacion> EditarAsync(int id, Producto productoEditado, string usuarioId)
     {
-        bool existeDuplicado = await _context.Productos.AnyAsync(p =>
-            p.Id != id &&
-            p.Activo &&
-            p.Nombre.ToLower() == productoEditado.Nombre.ToLower() &&
-            p.Categoria == productoEditado.Categoria &&
-            p.PrecioActual == productoEditado.PrecioActual);
-
-        if (existeDuplicado)
-        {
-            return new ResultadoOperacion
-            {
-                Exitoso = false,
-                MensajeError = "Ya existe otro producto activo con el mismo nombre, categoría y precio."
-            };
-        }
-
         var productoActual = await _context.Productos.FindAsync(id);
         if (productoActual == null)
         {
             return new ResultadoOperacion { Exitoso = false, MensajeError = "Producto no encontrado." };
+        }
+
+        productoEditado.Nombre = productoEditado.Nombre?.Trim() ?? string.Empty;
+
+        if (string.IsNullOrWhiteSpace(productoEditado.Nombre))
+        {
+            return new ResultadoOperacion { Exitoso = false, MensajeError = "El nombre del producto es obligatorio." };
+        }
+
+        if (productoEditado.PrecioActual == null || productoEditado.PrecioActual <= 0)
+        {
+            return new ResultadoOperacion { Exitoso = false, MensajeError = "El precio debe ser mayor a cero." };
+        }
+
+        // El chequeo de duplicado solo aplica si el producto va a quedar ACTIVO.
+        // Desactivar un producto nunca debería bloquearse por esta regla.
+        if (productoEditado.Activo)
+        {
+            bool existeDuplicado = await _context.Productos.AnyAsync(p =>
+                p.Id != id &&
+                p.Activo &&
+                p.Nombre.ToLower() == productoEditado.Nombre.ToLower() &&
+                p.Categoria == productoEditado.Categoria);
+
+            if (existeDuplicado)
+            {
+                return new ResultadoOperacion
+                {
+                    Exitoso = false,
+                    MensajeError = "Ya existe otro producto activo con el mismo nombre y categoría."
+                };
+            }
         }
 
         if (productoActual.PrecioActual != productoEditado.PrecioActual)

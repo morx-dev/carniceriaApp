@@ -23,7 +23,8 @@ public class Producto
     public CategoriaProducto Categoria { get; set; }
 
     [Required(ErrorMessage = "El precio es obligatorio.")]
-    [Range(0.01, 1000000.00, ErrorMessage = "El precio actual debe ser mayor a cero.")]
+    [Range(0.01, 1000000.00, ErrorMessage = "El precio debe estar entre Q0.01 y Q1,000,000.00.")]
+    [Display(Name = "Precio")]
     public decimal? PrecioActual { get; set; }
 
     public bool Activo { get; set; } = true;

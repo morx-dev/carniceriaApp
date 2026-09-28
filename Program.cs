@@ -42,8 +42,19 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.AccessDeniedPath = "/Cuenta/AccesoDenegado";
 });
 
+
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+
+builder.Services.Configure<Microsoft.AspNetCore.Mvc.MvcOptions>(options =>
+{
+    options.ModelBindingMessageProvider.SetValueIsInvalidAccessor(
+        value => $"El valor '{value}' no es válido.");
+    options.ModelBindingMessageProvider.SetAttemptedValueIsInvalidAccessor(
+        (value, field) => $"El valor '{value}' no es válido para {field}.");
+    options.ModelBindingMessageProvider.SetMissingKeyOrValueAccessor(
+        () => "Este campo es obligatorio.");
+});
 
 var app = builder.Build();
 

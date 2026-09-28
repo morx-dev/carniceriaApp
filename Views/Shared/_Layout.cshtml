@@ -10,7 +10,7 @@
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/carniceriaApp.styles.css" asp-append-version="true" />
 </head>
-<body>
+<body class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "Cuenta" && ViewContext.RouteData.Values["action"]?.ToString() == "Login" ? "login-page" : "")">
     @{
         var controladorActual = ViewContext.RouteData.Values["controller"]?.ToString();
         var accionActual = ViewContext.RouteData.Values["action"]?.ToString();
