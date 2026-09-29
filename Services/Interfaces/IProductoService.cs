@@ -6,6 +6,7 @@ public class ResultadoOperacion
 {
     public bool Exitoso { get; set; }
     public string? MensajeError { get; set; }
+    public string? Campo { get; set; }
 }
 
 public interface IProductoService

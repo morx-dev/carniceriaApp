@@ -3,106 +3,52 @@
     ViewData["Title"] = "Usuarios";
 }
 
-<style>
-    #usuariosModule {
-        --azul: #4f8fea;
-        --azul-oscuro: #3568c2;
-        --azul-texto: #1e4976;
-        --azul-claro-bg: #eaf2fd;
-        --rojo: #f16c6c;
-        --rojo-oscuro: #d94f4f;
-        --rojo-claro-bg: #fdebeb;
-    }
-
-    #usuariosModule h2.titulo-usuarios {
-        color: var(--azul-texto);
-    }
-
-    #usuariosModule .btn-azul {
-        background: linear-gradient(135deg, var(--azul) 0%, var(--azul-oscuro) 100%);
-        border: none;
-        color: #fff;
-        transition: filter 0.15s ease, transform 0.15s ease;
-    }
-    #usuariosModule .btn-azul:hover {
-        filter: brightness(0.95);
-        transform: translateY(-1px);
-        color: #fff;
-    }
-
-    #usuariosModule #inputBusqueda,
-    #usuariosModule #selectRol {
-        border: 1px solid #dbe2ea;
-    }
-    #usuariosModule #inputBusqueda:focus,
-    #usuariosModule #selectRol:focus {
-        border-color: var(--azul);
-        box-shadow: 0 0 0 3px rgba(79, 143, 234, 0.18);
-    }
-
-    #usuariosModule .alert-success {
-        background-color: var(--azul-claro-bg);
-        border: 1px solid var(--azul);
-        color: var(--azul-texto);
-    }
-
-    @@media (max-width: 576px) {
-        #usuariosModule .header-usuarios {
-            flex-direction: column;
-            align-items: stretch !important;
-            gap: 0.75rem;
-        }
-        #usuariosModule .header-usuarios .btn-azul {
-            width: 100%;
-        }
-        #usuariosModule .row.g-2.mb-4 > div {
-            margin-bottom: 0.25rem;
-        }
-    }
-</style>
-
-<div class="container py-4" id="usuariosModule">
-    <div class="d-flex justify-content-between align-items-center mb-4 header-usuarios">
-        <h2 class="titulo-usuarios fw-bold mb-0">Usuarios</h2>
-        <a asp-action="Crear" class="btn btn-azul rounded-pill px-4 shadow-sm fw-semibold">+ Nuevo usuario</a>
+<div class="container app-page">
+    <div class="app-page-header">
+        <h2>Usuarios</h2>
+        <a asp-action="Crear" class="btn-brand">
+            <i class="bi bi-plus-lg"></i> Nuevo usuario
+        </a>
     </div>
 
     @if (TempData["Mensaje"] != null)
     {
-        <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+        <div class="alert alert-app-success alert-dismissible fade show" role="alert">
             @TempData["Mensaje"]
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     }
-
-    <div class="row g-2 mb-4">
-        <div class="col-md-5">
-            <input type="text" id="inputBusqueda" class="form-control rounded-pill px-3 shadow-none"
-                   placeholder="Buscar por nombre o correo..."
-                   value="@ViewBag.BusquedaActual" autocomplete="off" autofocus />
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
-        <div class="col-md-4">
-            <select id="selectRol" class="form-select rounded-pill px-3 shadow-none">
-                <option value="">Todos los roles</option>
-                @if (ViewBag.Roles != null)
+    }
+
+    <div class="search-toolbar">
+        <input type="text" id="inputBusqueda" class="form-control" style="max-width: 320px;"
+               placeholder="Buscar por nombre o correo..."
+               value="@ViewBag.BusquedaActual" autocomplete="off" autofocus />
+        <select id="selectRol" class="form-select" style="max-width: 220px;">
+            <option value="">Todos los roles</option>
+            @if (ViewBag.Roles != null)
+            {
+                @foreach (var rol in (List<string>)ViewBag.Roles)
                 {
-                    @foreach (var rol in (List<string>)ViewBag.Roles)
+                    if (ViewBag.RolActual != null && (string)ViewBag.RolActual == rol)
                     {
-                        if (ViewBag.RolActual != null && (string)ViewBag.RolActual == rol)
-                        {
-                            <option value="@rol" selected>@rol</option>
-                        }
-                        else
-                        {
-                            <option value="@rol">@rol</option>
-                        }
+                        <option value="@rol" selected>@rol</option>
+                    }
+                    else
+                    {
+                        <option value="@rol">@rol</option>
                     }
                 }
-            </select>
-        </div>
+            }
+        </select>
     </div>
 
-    <!-- Contenedor donde se actualiza la tabla dinámicamente -->
     <div id="contenedorTablaUsuarios">
         <partial name="_TablaUsuarios" model="Model" />
     </div>
@@ -141,7 +87,7 @@
             }, 300);
         });
 
-        selectRol.directive = selectRol.addEventListener('change', function () {
+        selectRol.addEventListener('change', function () {
             realizarBusqueda();
         });
     </script>

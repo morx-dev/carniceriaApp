@@ -9,6 +9,6 @@ public interface IUsuarioService
     Task<Usuario?> ObtenerPorIdAsync(string id);
     Task<string?> ObtenerRolActualAsync(Usuario usuario);
     Task<ResultadoOperacion> CrearAsync(CrearUsuarioViewModel modelo);
-    Task EditarAsync(EditarUsuarioViewModel modelo);
-    Task CambiarEstadoAsync(string id);
+    Task<ResultadoOperacion> EditarAsync(EditarUsuarioViewModel modelo);
+    Task<ResultadoOperacion> CambiarEstadoAsync(string id, string usuarioActualId);
 }

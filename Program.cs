@@ -24,6 +24,7 @@ builder.Services.AddIdentity<Usuario, IdentityRole>(options =>
         options.Password.RequiredLength = 6;
     })
     .AddEntityFrameworkStores<ApplicationDbContext>()
+    .AddErrorDescriber<SpanishIdentityErrorDescriber>()
     .AddDefaultTokenProviders();
 
 // REGISTRO PARA QUE EL NAVBAR MUESTRE EL NOMBRE COMPLETO AUTOMÁTICAMENTE

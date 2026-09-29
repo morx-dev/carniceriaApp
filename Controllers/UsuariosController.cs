@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using carniceriaApp.Models;
 using carniceriaApp.Services.Interfaces;
@@ -9,10 +10,12 @@ namespace carniceriaApp.Controllers;
 public class UsuariosController : Controller
 {
     private readonly IUsuarioService _usuarioService;
+    private readonly UserManager<Usuario> _userManager;
 
-    public UsuariosController(IUsuarioService usuarioService)
+    public UsuariosController(IUsuarioService usuarioService, UserManager<Usuario> userManager)
     {
         _usuarioService = usuarioService;
+        _userManager = userManager;
     }
 
     public async Task<IActionResult> Index(string? busqueda, string? rol)
@@ -50,7 +53,11 @@ public class UsuariosController : Controller
 
         if (!resultado.Exitoso)
         {
-            ModelState.AddModelError(string.Empty, resultado.MensajeError!);
+            if (!string.IsNullOrEmpty(resultado.Campo))
+                ModelState.AddModelError(resultado.Campo, resultado.MensajeError!);
+            else
+                ModelState.AddModelError(string.Empty, resultado.MensajeError!);
+
             return View(modelo);
         }
 
@@ -86,7 +93,18 @@ public class UsuariosController : Controller
             return View(modelo);
         }
 
-        await _usuarioService.EditarAsync(modelo);
+        var resultado = await _usuarioService.EditarAsync(modelo);
+
+        if (!resultado.Exitoso)
+        {
+            if (!string.IsNullOrEmpty(resultado.Campo))
+                ModelState.AddModelError(resultado.Campo, resultado.MensajeError!);
+            else
+                ModelState.AddModelError(string.Empty, resultado.MensajeError!);
+
+            ViewBag.Roles = await _usuarioService.ObtenerRolesDisponiblesAsync();
+            return View(modelo);
+        }
 
         TempData["Mensaje"] = "Usuario actualizado correctamente.";
         return RedirectToAction(nameof(Index));
@@ -96,7 +114,12 @@ public class UsuariosController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> CambiarEstado(string id)
     {
-        await _usuarioService.CambiarEstadoAsync(id);
+        var usuarioActualId = _userManager.GetUserId(User) ?? string.Empty;
+        var resultado = await _usuarioService.CambiarEstadoAsync(id, usuarioActualId);
+
+        TempData[resultado.Exitoso ? "Mensaje" : "Error"] =
+            resultado.Exitoso ? "Estado actualizado correctamente." : resultado.MensajeError;
+
         return RedirectToAction(nameof(Index));
     }
 }
