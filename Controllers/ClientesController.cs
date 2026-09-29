@@ -44,7 +44,17 @@ public class ClientesController : Controller
         if (!ModelState.IsValid)
             return View(cliente);
 
-        await _clienteService.CrearAsync(cliente);
+        var resultado = await _clienteService.CrearAsync(cliente);
+
+        if (!resultado.Exitoso)
+        {
+            if (!string.IsNullOrEmpty(resultado.Campo))
+                ModelState.AddModelError(resultado.Campo, resultado.MensajeError!);
+            else
+                ModelState.AddModelError(string.Empty, resultado.MensajeError!);
+
+            return View(cliente);
+        }
 
         TempData["Mensaje"] = "Cliente creado correctamente.";
         return RedirectToAction(nameof(Index));
