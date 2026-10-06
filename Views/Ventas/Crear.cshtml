@@ -8,106 +8,93 @@
     var esMostrador = User.IsInRole("Mostrador");
 }
 
-<h2>Crear venta</h2>
+<div class="container app-page">
+    <div class="form-card" style="max-width: 860px; margin: 0 auto;">
+        <h2>Crear venta</h2>
 
-@if (TempData["Mensaje"] != null)
-{
-    <div class="alert alert-success">@TempData["Mensaje"]</div>
-}
+        @if (TempData["Mensaje"] != null)
+        {
+            <div class="alert alert-app-success">@TempData["Mensaje"]</div>
+        }
 
-@if (!ViewData.ModelState.IsValid)
-{
-    <div class="alert alert-danger">
-        <ul class="mb-0">
-            @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+        @if (!ViewData.ModelState.IsValid)
+        {
+            <div class="alert alert-danger">
+                <ul class="mb-0">
+                    @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                    {
+                        <li>@error.ErrorMessage</li>
+                    }
+                </ul>
+            </div>
+        }
+
+        <div id="erroresFormulario" class="inline-error" style="display: none;"></div>
+
+        <form asp-action="Crear" method="post" id="formVenta" novalidate>
+
+            @if (esAdmin || esMostrador)
             {
-                <li>@error.ErrorMessage</li>
+                <div class="mb-3">
+                    <label class="form-label-app">Tipo de venta</label>
+                    <div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="TipoVenta" id="tipoPresencial" value="Presencial" checked onclick="toggleTipoVenta(false)" />
+                            <label class="form-check-label" for="tipoPresencial">Presencial</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="TipoVenta" id="tipoRemota" value="Remota" onclick="toggleTipoVenta(true)" />
+                            <label class="form-check-label" for="tipoRemota">Remota (WhatsApp / Llamada)</label>
+                        </div>
+                    </div>
+                </div>
             }
-        </ul>
-    </div>
-}
 
-<form asp-action="Crear" method="post" id="formVenta">
-
-    @if (esAdmin)
-    {
-        <div class="mb-3">
-            <label class="form-label">Tipo de venta</label>
-            <div>
-                <div class="form-check form-check-inline">
-                    <input class="form-check-input" type="radio" name="TipoVenta" id="tipoPresencial" value="Presencial" checked onclick="toggleTipoVenta(false)" />
-                    <label class="form-check-label" for="tipoPresencial">Presencial</label>
-                </div>
-                <div class="form-check form-check-inline">
-                    <input class="form-check-input" type="radio" name="TipoVenta" id="tipoRemota" value="Remota" onclick="toggleTipoVenta(true)" />
-                    <label class="form-check-label" for="tipoRemota">Remota (WhatsApp / Llamada)</label>
+            <!-- SECCIÓN PRESENCIAL: calculadora, sin productos -->
+            <div id="seccionPresencial" style="display: @((esCallCenter) ? "none" : "block");">
+                <div class="mb-3">
+                    <label class="form-label-app">Monto total de la venta (Q)</label>
+                    <input type="number" name="MontoTotalPresencial" class="form-control form-control-app" step="0.01" min="0.01" placeholder="Ej. 56.00" />
                 </div>
             </div>
-        </div>
-    }
 
-    <!-- SECCIÓN PRESENCIAL: calculadora, sin productos -->
-    <div id="seccionPresencial" style="display: @((esMostrador || esAdmin) ? "block" : "none");">
-        <div class="mb-3">
-            <label class="form-label">Monto total de la venta (Q)</label>
-            <input type="number" name="MontoTotalPresencial" class="form-control form-control-lg" step="0.01" min="0.01" placeholder="Ej. 56.00" />
-        </div>
-    </div>
+            <!-- SECCIÓN REMOTA -->
+            <div id="seccionRemota" style="display: @((esCallCenter) ? "block" : "none");">
 
-    <!-- SECCIÓN REMOTA -->
-    <div id="seccionRemota" style="display: @((esCallCenter) ? "block" : "none");">
-
-        <div class="mb-3">
-            <label class="form-label">Buscar cliente por dirección</label>
-            <input type="text" id="inputBuscarCliente" class="form-control" placeholder="Ej. 56 ave 6-12" autocomplete="off" />
-            <input type="hidden" name="ClienteId" id="ClienteIdHidden" />
-            <div id="resultadosClientes" class="list-group mt-1" style="max-height: 220px; overflow-y: auto;"></div>
-            <div id="clienteSeleccionado" class="mt-2 fw-bold text-success"></div>
-        </div>
-
-        <div class="mb-3">
-            <label class="form-label">Origen del pedido</label>
-            <div>
-                <div class="form-check form-check-inline">
-                    <input class="form-check-input" type="radio" name="TipoOrigenSeleccionado" value="WhatsApp" checked />
-                    <label class="form-check-label">WhatsApp</label>
+                <div class="mb-3">
+                    <label class="form-label-app">Buscar cliente por dirección</label>
+                    <input type="text" id="inputBuscarCliente" class="form-control form-control-app" placeholder="Ej. 56 ave 6-12" autocomplete="off" />
+                    <input type="hidden" name="ClienteId" id="ClienteIdHidden" />
+                    <div id="resultadosClientes" class="list-group mt-1" style="max-height: 220px; overflow-y: auto;"></div>
+                    <div id="clienteSeleccionado" class="mt-2 fw-bold" style="color: var(--sage);"></div>
                 </div>
-                <div class="form-check form-check-inline">
-                    <input class="form-check-input" type="radio" name="TipoOrigenSeleccionado" value="Llamada" />
-                    <label class="form-check-label">Llamada</label>
+
+                <div class="mb-3">
+                    <label class="form-label-app">Origen del pedido</label>
+                    <div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="TipoOrigenSeleccionado" value="WhatsApp" checked />
+                            <label class="form-check-label">WhatsApp</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="TipoOrigenSeleccionado" value="Llamada" />
+                            <label class="form-check-label">Llamada</label>
+                        </div>
+                    </div>
                 </div>
-            </div>
-        </div>
 
-        <div class="form-check mb-3">
-            <input class="form-check-input" type="checkbox" id="checkSoloObservacion" onclick="toggleSoloObservacion(this.checked)" />
-            <label class="form-check-label" for="checkSoloObservacion">
-                Solo tomar nota (sin seleccionar productos)
-            </label>
-        </div>
+                <hr />
 
-        <!-- OBSERVACIÓN -->
-        <div id="seccionObservacion" style="display: none;" class="mb-3">
-            <label class="form-label">Observación del pedido</label>
-            <textarea name="Observaciones" class="form-control" rows="3" placeholder="Ej. El cliente pide 5 rodajas de adobado, lo que pese"></textarea>
-        </div>
-
-        <!-- PRODUCTOS -->
-        <div id="seccionProductos">
-            <hr />
-            <h5>Productos</h5>
-            <div class="row g-2 mb-2">
-                <div class="col-md-3">
-                    <select id="filtroCategoria" class="form-select">
+                <h5 style="color: var(--ink);">Productos</h5>
+                <div class="producto-insert-row">
+                    <select id="filtroCategoria" class="form-select form-control-app">
                         <option value="">Todas las categorías</option>
                         @foreach (var cat in Enum.GetValues(typeof(carniceriaApp.Models.CategoriaProducto)))
                         {
                             <option value="@cat">@cat</option>
                         }
                     </select>
-                </div>
-                <div class="col-md-4">
-                    <select id="selectProducto" class="form-select">
+                    <select id="selectProducto" class="form-select form-control-app">
                         <option value="">-- Selecciona un producto --</option>
                         @foreach (var producto in productos)
                         {
@@ -116,42 +103,48 @@
                             </option>
                         }
                     </select>
+                    <input type="number" id="inputCantidad" class="form-control form-control-app" placeholder="Cantidad (lb)" step="0.01" min="0.01" />
+                    <input type="text" id="inputObservacion" class="form-control form-control-app" placeholder="Observación (opcional)" />
                 </div>
-                <div class="col-md-2">
-                    <input type="number" id="inputCantidad" class="form-control" placeholder="Cantidad (lb)" step="0.01" min="0.01" />
+                <div class="mb-2 text-end">
+                    <button type="button" class="btn-brand" onclick="agregarProducto()">
+                        <i class="bi bi-plus-lg"></i> Agregar
+                    </button>
                 </div>
-                <div class="col-md-3">
-                    <button type="button" class="btn btn-outline-primary w-100" onclick="agregarProducto()">+ Agregar</button>
+
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Producto</th>
+                                <th>Cantidad</th>
+                                <th>Observación</th>
+                                <th>Precio unitario</th>
+                                <th>Subtotal</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="cuerpoDetalle"></tbody>
+                        <tfoot>
+                            <tr>
+                                <td colspan="4" class="text-end fw-bold">Total</td>
+                                <td id="totalVenta" class="fw-bold">Q0.00</td>
+                                <td></td>
+                            </tr>
+                        </tfoot>
+                    </table>
                 </div>
+
+                <div id="inputsOcultos"></div>
             </div>
 
-            <table class="table table-sm">
-                <thead>
-                    <tr>
-                        <th>Producto</th>
-                        <th>Cantidad</th>
-                        <th>Precio unitario</th>
-                        <th>Subtotal</th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody id="cuerpoDetalle"></tbody>
-                <tfoot>
-                    <tr>
-                        <td colspan="3" class="text-end fw-bold">Total</td>
-                        <td id="totalVenta" class="fw-bold">Q0.00</td>
-                        <td></td>
-                    </tr>
-                </tfoot>
-            </table>
-
-            <div id="inputsOcultos"></div>
-        </div>
+            <div class="d-flex gap-2 justify-content-end mt-3 flex-wrap">
+                <a asp-controller="Home" asp-action="Index" class="btn-outline-brand">Cancelar</a>
+                <button type="submit" class="btn-brand">Guardar venta</button>
+            </div>
+        </form>
     </div>
-
-    <button type="submit" class="btn btn-primary mt-2">Guardar venta</button>
-    <a asp-controller="Home" asp-action="Index" class="btn btn-secondary mt-2">Cancelar</a>
-</form>
+</div>
 
 @section Scripts {
 <script>
@@ -161,17 +154,20 @@
     let contador = 0;
     let total = 0;
 
+    function mostrarError(mensaje) {
+        const el = document.getElementById('erroresFormulario');
+        el.textContent = mensaje;
+        el.style.display = 'block';
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        clearTimeout(window._errorTimeout);
+        window._errorTimeout = setTimeout(() => { el.style.display = 'none'; }, 4000);
+    }
+
     function toggleTipoVenta(esRemota) {
         document.getElementById('seccionPresencial').style.display = esRemota ? 'none' : 'block';
         document.getElementById('seccionRemota').style.display = esRemota ? 'block' : 'none';
     }
 
-    function toggleSoloObservacion(soloObservacion) {
-        document.getElementById('seccionObservacion').style.display = soloObservacion ? 'block' : 'none';
-        document.getElementById('seccionProductos').style.display = soloObservacion ? 'none' : 'block';
-    }
-
-    // Buscador de clientes por dirección
     const inputBuscarCliente = document.getElementById('inputBuscarCliente');
     const resultadosClientes = document.getElementById('resultadosClientes');
     const clienteIdHidden = document.getElementById('ClienteIdHidden');
@@ -222,14 +218,16 @@
     function agregarProducto() {
         const select = document.getElementById('selectProducto');
         const cantidadInput = document.getElementById('inputCantidad');
+        const observacionInput = document.getElementById('inputObservacion');
 
         const productoId = select.value;
         const nombre = select.options[select.selectedIndex]?.dataset.nombre;
         const precio = parseFloat(select.options[select.selectedIndex]?.dataset.precio);
         const cantidad = parseFloat(cantidadInput.value);
+        const observacion = observacionInput.value.trim();
 
         if (!productoId || isNaN(cantidad) || cantidad <= 0) {
-            alert('Selecciona un producto y una cantidad válida.');
+            mostrarError('Selecciona un producto y una cantidad válida.');
             return;
         }
 
@@ -242,9 +240,10 @@
         fila.innerHTML = `
             <td>${nombre}</td>
             <td>${cantidad}</td>
+            <td>${observacion ? observacion : '<span class="text-muted">—</span>'}</td>
             <td>Q${precio.toFixed(2)}</td>
             <td>Q${subtotal.toFixed(2)}</td>
-            <td><button type="button" class="btn btn-sm btn-outline-danger" onclick="eliminarFila(this)">Quitar</button></td>
+            <td><button type="button" class="btn-soft-danger" onclick="eliminarFila(this)">Quitar</button></td>
         `;
         document.getElementById('cuerpoDetalle').appendChild(fila);
 
@@ -262,14 +261,22 @@
         inputCant.value = cantidad;
         inputCant.dataset.indice = contador;
 
+        const inputObs = document.createElement('input');
+        inputObs.type = 'hidden';
+        inputObs.name = `Detalles[${contador}].Observacion`;
+        inputObs.value = observacion;
+        inputObs.dataset.indice = contador;
+
         inputsOcultos.appendChild(inputProducto);
         inputsOcultos.appendChild(inputCant);
+        inputsOcultos.appendChild(inputObs);
 
         contador++;
         document.getElementById('totalVenta').textContent = `Q${total.toFixed(2)}`;
 
         select.value = '';
         cantidadInput.value = '';
+        observacionInput.value = '';
     }
 
     function eliminarFila(boton) {
@@ -286,14 +293,11 @@
 
     document.getElementById('formVenta').addEventListener('submit', function (e) {
         const esRemota = document.getElementById('seccionRemota').style.display === 'block';
-        if (!esRemota) return; // presencial no necesita esta validación
-
-        const soloObservacion = document.getElementById('checkSoloObservacion')?.checked;
-        if (soloObservacion) return; // no requiere productos
+        if (!esRemota) return;
 
         if (document.getElementById('cuerpoDetalle').children.length === 0) {
             e.preventDefault();
-            alert('Agrega al menos un producto antes de guardar la venta.');
+            mostrarError('Agrega al menos un producto antes de guardar la venta.');
         }
     });
 </script>

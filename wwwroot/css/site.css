@@ -77,10 +77,7 @@ h1, h2, h3, h4, .brand-font {
 
 .auth-brand {
     display: none;
-    background-color: var(--oxblood);
-    background-image:
-        repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0px, rgba(255, 255, 255, 0.08) 1px, transparent 1px, transparent 24px),
-        radial-gradient(circle at 25% 15%, var(--oxblood-light), var(--oxblood) 65%);
+    background-color: #0F0D0C;
     color: var(--paper-2);
     align-items: center;
     justify-content: center;
@@ -97,7 +94,7 @@ h1, h2, h3, h4, .brand-font {
     width: auto;
     display: block;
     margin: 0 auto 1.75rem;
-    filter: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.28));
+    filter: drop-shadow(0 0 28px rgba(176, 30, 60, 0.4));
 }
 
 .auth-brand__title {
@@ -116,10 +113,7 @@ h1, h2, h3, h4, .brand-font {
 }
 
 .auth-mobile-hero {
-    background-color: var(--oxblood);
-    background-image:
-        repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0px, rgba(255, 255, 255, 0.08) 1px, transparent 1px, transparent 22px),
-        radial-gradient(circle at 25% 15%, var(--oxblood-light), var(--oxblood) 70%);
+    background-color: #0F0D0C;
     border-radius: 24px;
     padding: 2.25rem 1.5rem 2rem;
     text-align: center;
@@ -131,7 +125,7 @@ h1, h2, h3, h4, .brand-font {
     width: auto;
     display: block;
     margin: 0 auto 1rem;
-    filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.3));
+    filter: drop-shadow(0 0 20px rgba(176, 30, 60, 0.4));
 }
 
 .auth-mobile-hero h1 {
@@ -613,6 +607,10 @@ h1, h2, h3, h4, .brand-font {
     background-color: var(--paper);
 }
 
+select.form-control-app {
+    padding-right: 2.5rem;
+}
+
 .form-control-app:focus {
     border-color: var(--oxblood);
     box-shadow: 0 0 0 3px rgba(176, 30, 60, 0.12);
@@ -740,5 +738,268 @@ h1, h2, h3, h4, .brand-font {
     }
     .dl-stack-mobile dt {
         margin-top: 0.5rem;
+    }
+}
+
+/* ===== Línea de pasos del estado del pedido ===== */
+
+.linea-estado-pedido {
+    display: flex;
+    align-items: flex-start;
+    margin: 0.75rem 0;
+}
+
+.paso-estado {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    width: 72px;
+    flex-shrink: 0;
+}
+
+.paso-estado__circulo {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background-color: var(--paper);
+    border: 2px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--ink-soft);
+    font-size: 0.85rem;
+    margin-bottom: 0.3rem;
+}
+
+.paso-estado__texto {
+    font-size: 0.68rem;
+    color: var(--ink-soft);
+    line-height: 1.2;
+}
+
+.paso-estado.is-completado .paso-estado__circulo {
+    background-color: var(--sage);
+    border-color: var(--sage);
+    color: #fff;
+}
+.paso-estado.is-completado .paso-estado__texto {
+    color: var(--sage);
+    font-weight: 600;
+}
+
+.paso-estado.is-actual .paso-estado__circulo {
+    background-color: var(--oxblood);
+    border-color: var(--oxblood);
+    color: #fff;
+}
+.paso-estado.is-actual .paso-estado__texto {
+    color: var(--oxblood);
+    font-weight: 700;
+}
+
+.paso-estado__conector {
+    flex: 1;
+    height: 2px;
+    background-color: var(--border);
+    margin-top: 15px;
+}
+.paso-estado__conector.is-completado {
+    background-color: var(--sage);
+}
+
+.estado-pedido-cancelado {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    background-color: #FBEAEA;
+    color: var(--danger);
+    border: 1px solid #F0C4C4;
+    border-radius: 999px;
+    padding: 0.4rem 0.9rem;
+    font-weight: 600;
+    font-size: 0.85rem;
+    margin: 0.5rem 0;
+}
+
+.pedido-editado-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    background-color: #FBF1DE;
+    color: #8A5A17;
+    border: 1px solid var(--mustard);
+    border-radius: 999px;
+    padding: 0.2rem 0.6rem;
+    font-size: 0.72rem;
+    font-weight: 600;
+}
+
+/* ===== Tarjeta de pedido editado: resalta mucho más que antes ===== */
+
+.app-card.pedido-card-editado {
+    background-color: #FFF8EA;
+    border: 1px solid var(--mustard);
+    border-left: 6px solid var(--mustard);
+    box-shadow: 0 4px 16px rgba(217, 164, 65, 0.28);
+}
+
+/* ===== Mensajes de validación inline (reemplazan alert() del navegador) ===== */
+
+.inline-error {
+    color: var(--danger);
+    background-color: #FBEAEA;
+    border: 1px solid #F0C4C4;
+    border-radius: 8px;
+    padding: 0.6rem 0.9rem;
+    font-size: 0.85rem;
+    margin-top: 0.5rem;
+}
+
+/* ===== Pestañas (Mis entregas) ===== */
+
+.app-tabs {
+    border-bottom: 2px solid var(--border);
+}
+.app-tabs .nav-link {
+    border: none;
+    background: none;
+    color: var(--ink-soft);
+    font-weight: 600;
+    padding: 0.6rem 1.1rem;
+    border-radius: 0;
+    position: relative;
+}
+.app-tabs .nav-link.active {
+    color: var(--oxblood);
+}
+.app-tabs .nav-link.active::after {
+    content: '';
+    position: absolute;
+    left: 0; right: 0; bottom: -2px;
+    height: 2px;
+    background-color: var(--oxblood);
+}
+.badge-count {
+    background-color: var(--paper);
+    color: var(--ink-soft);
+    border-radius: 999px;
+    padding: 0.1rem 0.55rem;
+    font-size: 0.72rem;
+    margin-left: 0.3rem;
+}
+.app-tabs .nav-link.active .badge-count {
+    background-color: var(--oxblood);
+    color: #fff;
+}
+
+/* ===== Navbar rediseñado ===== */
+
+.navbar-app {
+    background-color: var(--paper-2) !important;
+    border-bottom: 1px solid var(--border);
+    padding: 0.65rem 0;
+}
+
+.navbar-app .navbar-brand {
+    font-family: var(--font-display);
+    font-weight: 700;
+    color: var(--oxblood) !important;
+    font-size: 1.3rem;
+}
+
+.navbar-app .nav-link-app {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    color: var(--ink-soft) !important;
+    font-weight: 600;
+    font-size: 0.86rem;
+    padding: 0.5rem 0.95rem;
+    border-radius: 999px;
+    transition: background-color 0.15s ease, color 0.15s ease;
+    white-space: nowrap;
+}
+
+.navbar-app .nav-link-app:hover {
+    background-color: var(--paper);
+    color: var(--oxblood) !important;
+}
+
+.navbar-app .nav-link-app i {
+    font-size: 1rem;
+}
+
+.navbar-app .nav-user {
+    font-size: 0.85rem;
+    color: var(--ink-soft);
+    white-space: nowrap;
+}
+
+.navbar-app .btn-logout {
+    background: none;
+    border: none;
+    color: var(--ink-soft) !important;
+    font-weight: 600;
+    font-size: 0.85rem;
+    padding: 0.45rem 0.9rem;
+    border-radius: 999px;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+.navbar-app .btn-logout:hover {
+    background-color: #FBEAEA;
+    color: var(--danger) !important;
+}
+
+@media (max-width: 991px) {
+    .navbar-app .navbar-nav {
+        gap: 0.3rem;
+        padding: 0.5rem 0;
+    }
+    .navbar-app .nav-link-app {
+        width: 100%;
+    }
+}
+
+
+.auth-brand {
+    background-color: #0F0D0C !important;
+    background-image: none !important;
+}
+
+.auth-mobile-hero {
+    background-color: #0F0D0C !important;
+    background-image: none !important;
+}
+
+select.form-control-app {
+    padding-right: 2.5rem;
+}
+
+
+/* ===== Fila de inserción de productos (Crear / Editar venta) ===== */
+
+.producto-insert-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    margin-bottom: 0.75rem;
+}
+
+.producto-insert-row > select,
+.producto-insert-row > input {
+    flex: 1 1 200px;
+    min-width: 160px;
+}
+
+@media (max-width: 860px) {
+    .producto-insert-row {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+@media (max-width: 480px) {
+    .producto-insert-row {
+        grid-template-columns: 1fr;
     }
 }

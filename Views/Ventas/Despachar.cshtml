@@ -1,78 +1,58 @@
 @model carniceriaApp.Models.Venta
 @{
     ViewData["Title"] = "Despachar pedido";
-    var productos = (List<carniceriaApp.Models.Producto>)ViewBag.Productos;
 }
 
-<h2>Despachar pedido — @(Model.Cliente?.Nombre ?? "Sin cliente")</h2>
-<p class="text-muted">@Model.Cliente?.Direccion</p>
+<div class="container app-page">
+    <div class="form-card form-card--warn" style="max-width: 780px; margin: 0 auto;">
+        <h2>Despachar pedido — @(Model.Cliente?.Nombre ?? "Sin cliente")</h2>
+        <p style="color: var(--ink-soft);">@Model.Cliente?.Direccion</p>
 
-@if (!string.IsNullOrWhiteSpace(Model.Observaciones))
-{
-    <div class="alert alert-warning">
-        <strong>Observación del pedido:</strong> @Model.Observaciones
+        @if (!string.IsNullOrWhiteSpace(Model.Observaciones))
+        {
+            <div class="alert alert-app-warning">
+                <strong>Observación general del pedido:</strong> @Model.Observaciones
+            </div>
+        }
+
+        <p style="color: var(--ink-soft);">Ajusta la cantidad real pesada de cada producto. Si necesitas agregar o quitar productos del pedido, usa la acción "Editar pedido".</p>
+
+        <div id="erroresFormulario" class="inline-error" style="display: none;"></div>
+
+        <form asp-action="Despachar" asp-route-id="@Model.Id" method="post" id="formDespachar">
+
+            <div class="table-responsive">
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th>Producto</th>
+                            <th>Cantidad (peso real)</th>
+                            <th>Observación</th>
+                            <th>Precio unitario</th>
+                            <th>Subtotal</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="cuerpoDetalle"></tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="4" class="text-end fw-bold">Total</td>
+                            <td id="totalVenta" class="fw-bold">Q0.00</td>
+                            <td></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+
+            <div id="inputsOcultos"></div>
+
+            <div class="d-flex gap-2 justify-content-end mt-3 flex-wrap">
+                <a asp-action="Pendientes" class="btn-outline-brand">Cancelar</a>
+                <button type="submit" class="btn-brand">Guardar y continuar</button>
+            </div>
+        </form>
     </div>
-}
-
-<p class="text-muted">Ajusta la cantidad real pesada de cada producto. Si el pedido llegó solo con observación, agrega aquí los productos correspondientes.</p>
-
-<form asp-action="Despachar" asp-route-id="@Model.Id" method="post" id="formDespachar">
-
-    <h5>Productos</h5>
-    <div class="row g-2 mb-2">
-        <div class="col-md-3">
-            <select id="filtroCategoria" class="form-select">
-                <option value="">Todas las categorías</option>
-                @foreach (var cat in Enum.GetValues(typeof(carniceriaApp.Models.CategoriaProducto)))
-                {
-                    <option value="@cat">@cat</option>
-                }
-            </select>
-        </div>
-        <div class="col-md-4">
-            <select id="selectProducto" class="form-select">
-                <option value="">-- Selecciona un producto --</option>
-                @foreach (var producto in productos)
-                {
-                    <option value="@producto.Id" data-nombre="@producto.Nombre" data-precio="@producto.PrecioActual" data-categoria="@producto.Categoria">
-                        @producto.Nombre (Q@(producto.PrecioActual?.ToString("N2"))) — @producto.Categoria
-                    </option>
-                }
-            </select>
-        </div>
-        <div class="col-md-2">
-            <input type="number" id="inputCantidad" class="form-control" placeholder="Peso real (lb)" step="0.01" min="0.01" />
-        </div>
-        <div class="col-md-3">
-            <button type="button" class="btn btn-outline-primary w-100" onclick="agregarProducto()">+ Agregar</button>
-        </div>
-    </div>
-
-    <table class="table table-sm">
-        <thead>
-            <tr>
-                <th>Producto</th>
-                <th>Cantidad (peso real)</th>
-                <th>Precio unitario</th>
-                <th>Subtotal</th>
-                <th></th>
-            </tr>
-        </thead>
-        <tbody id="cuerpoDetalle"></tbody>
-        <tfoot>
-            <tr>
-                <td colspan="3" class="text-end fw-bold">Total</td>
-                <td id="totalVenta" class="fw-bold">Q0.00</td>
-                <td></td>
-            </tr>
-        </tfoot>
-    </table>
-
-    <div id="inputsOcultos"></div>
-
-    <button type="submit" class="btn btn-primary">Guardar y continuar</button>
-    <a asp-action="Pendientes" class="btn btn-secondary">Cancelar</a>
-</form>
+</div>
 
 @section Scripts {
 <script>
@@ -81,13 +61,23 @@
             productoId = d.ProductoId,
             nombre = d.Producto != null ? d.Producto.Nombre : "",
             precio = d.PrecioUnitario,
-            cantidad = d.Cantidad
+            cantidad = d.Cantidad,
+            observacion = d.Observaciones ?? ""
         })));
 
     let contador = 0;
     let total = 0;
 
-    function crearFila(productoId, nombre, precio, cantidad) {
+    function mostrarError(mensaje) {
+        const el = document.getElementById('erroresFormulario');
+        el.textContent = mensaje;
+        el.style.display = 'block';
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        clearTimeout(window._errorTimeout);
+        window._errorTimeout = setTimeout(() => { el.style.display = 'none'; }, 4000);
+    }
+
+    function crearFila(productoId, nombre, precio, cantidad, observacion) {
         const subtotal = precio * cantidad;
         total += subtotal;
 
@@ -101,9 +91,10 @@
                        value="${cantidad}" step="0.01" min="0.01"
                        data-precio="${precio}" data-indice="${contador}" style="max-width: 100px;">
             </td>
+            <td>${observacion ? observacion : '<span class="text-muted">—</span>'}</td>
             <td>Q${precio.toFixed(2)}</td>
             <td class="celdaSubtotal">Q${subtotal.toFixed(2)}</td>
-            <td><button type="button" class="btn btn-sm btn-outline-danger" onclick="eliminarFila(this)">Quitar</button></td>
+            <td><button type="button" class="btn-soft-danger" onclick="eliminarFila(this)">Quitar</button></td>
         `;
         document.getElementById('cuerpoDetalle').appendChild(fila);
 
@@ -122,8 +113,15 @@
         inputCant.dataset.indice = contador;
         inputCant.classList.add('inputCantidadHidden');
 
+        const inputObs = document.createElement('input');
+        inputObs.type = 'hidden';
+        inputObs.name = `Detalles[${contador}].Observacion`;
+        inputObs.value = observacion;
+        inputObs.dataset.indice = contador;
+
         inputsOcultos.appendChild(inputProducto);
         inputsOcultos.appendChild(inputCant);
+        inputsOcultos.appendChild(inputObs);
 
         contador++;
         actualizarTotal();
@@ -137,9 +135,8 @@
         document.getElementById('totalVenta').textContent = `Q${total.toFixed(2)}`;
     }
 
-    detallesExistentes.forEach(d => crearFila(d.productoId, d.nombre, d.precio, d.cantidad));
+    detallesExistentes.forEach(d => crearFila(d.productoId, d.nombre, d.precio, d.cantidad, d.observacion));
 
-    // Recalcular al editar el peso real directamente en la tabla
     document.getElementById('cuerpoDetalle').addEventListener('input', function (e) {
         if (!e.target.classList.contains('inputCantidadEditable')) return;
 
@@ -157,38 +154,6 @@
         actualizarTotal();
     });
 
-    document.getElementById('filtroCategoria').addEventListener('change', function () {
-        const categoriaSeleccionada = this.value;
-        const selectProducto = document.getElementById('selectProducto');
-
-        Array.from(selectProducto.options).forEach(opcion => {
-            if (!opcion.value) return;
-            opcion.hidden = categoriaSeleccionada !== '' && opcion.dataset.categoria !== categoriaSeleccionada;
-        });
-
-        selectProducto.value = '';
-    });
-
-    function agregarProducto() {
-        const select = document.getElementById('selectProducto');
-        const cantidadInput = document.getElementById('inputCantidad');
-
-        const productoId = select.value;
-        const nombre = select.options[select.selectedIndex]?.dataset.nombre;
-        const precio = parseFloat(select.options[select.selectedIndex]?.dataset.precio);
-        const cantidad = parseFloat(cantidadInput.value);
-
-        if (!productoId || isNaN(cantidad) || cantidad <= 0) {
-            alert('Selecciona un producto y una cantidad válida.');
-            return;
-        }
-
-        crearFila(productoId, nombre, precio, cantidad);
-
-        select.value = '';
-        cantidadInput.value = '';
-    }
-
     function eliminarFila(boton) {
         const fila = boton.closest('tr');
         const indice = fila.dataset.indice;
@@ -202,7 +167,7 @@
     document.getElementById('formDespachar').addEventListener('submit', function (e) {
         if (document.getElementById('cuerpoDetalle').children.length === 0) {
             e.preventDefault();
-            alert('Este pedido debe tener al menos un producto antes de despachar.');
+            mostrarError('Este pedido debe tener al menos un producto antes de despachar.');
         }
     });
 </script>

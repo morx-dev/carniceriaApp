@@ -5,72 +5,91 @@
     var esAdmin = User.IsInRole("Administrador");
     var esCallCenter = User.IsInRole("CallCenter");
     var esMostrador = User.IsInRole("Mostrador");
+    var nombresCreadores = (Dictionary<string, string>)ViewBag.NombresCreadores;
 }
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h2 class="mb-0">Pedidos pendientes</h2>
-    <button type="button" class="btn btn-outline-secondary" onclick="location.reload()">
-        🔄 Actualizar
-    </button>
-</div>
+<div class="container app-page">
+    <div class="app-page-header">
+        <h2>Pedidos pendientes</h2>
+        <button type="button" class="btn-outline-brand" onclick="location.reload()">
+            <i class="bi bi-arrow-clockwise"></i> Actualizar
+        </button>
+    </div>
 
-@if (TempData["Mensaje"] != null)
-{
-    <div class="alert alert-success">@TempData["Mensaje"]</div>
-}
-@if (TempData["Error"] != null)
-{
-    <div class="alert alert-danger">@TempData["Error"]</div>
-}
+    @if (TempData["Mensaje"] != null)
+    {
+        <div class="alert alert-app-success">@TempData["Mensaje"]</div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger">@TempData["Error"]</div>
+    }
 
-@if (!Model.Any())
-{
-    <p class="text-muted">No hay pedidos pendientes.</p>
-}
+    @if (!Model.Any())
+    {
+        <div class="empty-state">No hay pedidos pendientes.</div>
+    }
 
-@foreach (var venta in Model)
-{
-    <div class="card mb-3">
-        <div class="card-body">
-            <div class="d-flex justify-content-between">
-                <h5 class="card-title">
-                    @(venta.Cliente?.Nombre ?? "Cliente sin nombre") — @venta.TipoOrigen
-                </h5>
-                <span class="fw-bold">Q@(venta.Total.ToString("N2"))</span>
+    @foreach (var venta in Model)
+    {
+        <div class="app-card p-3 mb-3 @(venta.FueEditado ? "pedido-card-editado" : "")">
+            <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+                <div>
+                    <h5 class="mb-0" style="color: var(--ink);">
+                        @(venta.Cliente?.Nombre ?? "Cliente sin nombre") — @venta.TipoOrigen
+                        @if (venta.FueEditado)
+                        {
+                            <span class="pedido-editado-badge ms-2"><i class="bi bi-pencil-fill"></i> Editado</span>
+                        }
+                    </h5>
+                    <p class="mb-0 small" style="color: var(--ink-soft);">@venta.Cliente?.Direccion</p>
+                    <p class="mb-0 small" style="color: var(--ink-soft);">
+                        <i class="bi bi-person"></i> @(nombresCreadores.ContainsKey(venta.UsuarioCreadorId) ? nombresCreadores[venta.UsuarioCreadorId] : "Desconocido")
+                        &middot; <i class="bi bi-calendar3"></i> @venta.FechaCreacion.ToString("dd/MM/yyyy")
+                    </p>
+                </div>
+                <span class="fw-bold" style="color: var(--sage); font-size: 1.1rem;">Q@(venta.Total.ToString("N2"))</span>
             </div>
-            <p class="text-muted mb-1">@venta.Cliente?.Direccion</p>
+
+            <partial name="_LineaEstadoPedido" model="venta.EstadoId" />
 
             @if (!string.IsNullOrWhiteSpace(venta.Observaciones))
             {
-                <div class="alert alert-warning py-2">
-                    <strong>Observación:</strong> @venta.Observaciones
+                <div class="alert alert-app-warning py-2 mb-2">
+                    <strong>Observación general:</strong> @venta.Observaciones
                 </div>
             }
 
             @if (venta.Detalles.Any())
             {
-                <ul class="mb-2">
+                <ul class="mb-2 small" style="color: var(--ink);">
                     @foreach (var det in venta.Detalles)
                     {
-                        <li>@det.Producto?.Nombre — @det.Cantidad lb — Q@(det.Subtotal.ToString("N2"))</li>
+                        <li>
+                            @det.Producto?.Nombre — @det.Cantidad lb — Q@(det.Subtotal.ToString("N2"))
+                            @if (!string.IsNullOrWhiteSpace(det.Observaciones))
+                            {
+                                <em style="color: var(--ink-soft);">(@det.Observaciones)</em>
+                            }
+                        </li>
                     }
                 </ul>
             }
 
-            <div class="d-flex gap-2 flex-wrap">
-                @if (esAdmin || esCallCenter)
+            <div class="d-flex gap-2 flex-wrap mt-2">
+                @if ((esAdmin || esCallCenter) && venta.EstadoId == 1)
                 {
-                    <a asp-action="Editar" asp-route-id="@venta.Id" class="btn btn-sm btn-outline-primary">Editar pedido</a>
+                    <a asp-action="Editar" asp-route-id="@venta.Id" class="btn-soft-brand">Editar pedido</a>
                 }
 
-                @if (esAdmin || esMostrador)
+                @if ((esAdmin || esMostrador) && venta.EstadoId == 1)
                 {
-                    <a asp-action="Despachar" asp-route-id="@venta.Id" class="btn btn-sm btn-outline-warning">Ajustar peso / Despachar</a>
+                    <a asp-action="Despachar" asp-route-id="@venta.Id" class="btn-soft-brand">Ajustar peso / Despachar</a>
                 }
 
-                @if (esAdmin || esCallCenter)
+                @if ((esAdmin || esCallCenter || esMostrador) && venta.EstadoId == 2)
                 {
-                    <form asp-action="AsignarRepartidor" asp-route-id="@venta.Id" method="post" class="d-flex gap-1">
+                    <form asp-action="AsignarRepartidor" asp-route-id="@venta.Id" method="post" class="d-flex gap-1 flex-wrap">
                         <select name="repartidorId" class="form-select form-select-sm" required>
                             <option value="">-- Repartidor --</option>
                             @foreach (var r in repartidores)
@@ -78,10 +97,18 @@
                                 <option value="@r.Id">@r.NombreCompleto</option>
                             }
                         </select>
-                        <button type="submit" class="btn btn-sm btn-success">Asignar</button>
+                        <button type="submit" class="btn-brand">Asignar</button>
+                    </form>
+                }
+
+                @if (esAdmin || esCallCenter || esMostrador)
+                {
+                    <form asp-action="Cancelar" asp-route-id="@venta.Id" method="post"
+                          onsubmit="return pedirConfirmacion(this, '¿Confirmas que quieres cancelar este pedido?');">
+                        <button type="submit" class="btn-soft-danger">Cancelar pedido</button>
                     </form>
                 }
             </div>
         </div>
-    </div>
-}
+    }
+</div>

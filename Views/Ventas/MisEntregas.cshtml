@@ -1,53 +1,109 @@
 @model List<carniceriaApp.Models.Venta>
 @{
     ViewData["Title"] = "Mis entregas";
+    var entregadas = (List<carniceriaApp.Models.Venta>)ViewBag.Entregadas;
 }
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h2 class="mb-0">Mis entregas</h2>
-    <button type="button" class="btn btn-outline-secondary" onclick="location.reload()">
-        🔄 Actualizar
-    </button>
-</div>
+<div class="container app-page">
+    <div class="app-page-header">
+        <h2>Mis entregas</h2>
+        <button type="button" class="btn-outline-brand" onclick="location.reload()">
+            <i class="bi bi-arrow-clockwise"></i> Actualizar
+        </button>
+    </div>
 
-@if (TempData["Mensaje"] != null)
-{
-    <div class="alert alert-success">@TempData["Mensaje"]</div>
-}
-@if (TempData["Error"] != null)
-{
-    <div class="alert alert-danger">@TempData["Error"]</div>
-}
+    @if (TempData["Mensaje"] != null)
+    {
+        <div class="alert alert-app-success">@TempData["Mensaje"]</div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger">@TempData["Error"]</div>
+    }
 
-@if (!Model.Any())
-{
-    <p class="text-muted">No tienes pedidos asignados por entregar.</p>
-}
+    <ul class="nav app-tabs mb-3" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#panelPorEntregar" type="button" role="tab">
+                Por entregar <span class="badge-count">@Model.Count</span>
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#panelEntregadas" type="button" role="tab">
+                Entregadas <span class="badge-count">@entregadas.Count</span>
+            </button>
+        </li>
+    </ul>
 
-@foreach (var venta in Model)
-{
-    <div class="card mb-3">
-        <div class="card-body">
-            <div class="d-flex justify-content-between">
-                <h5 class="card-title">@(venta.Cliente?.Nombre ?? "Cliente sin nombre")</h5>
-                <span class="fw-bold">Q@(venta.Total.ToString("N2"))</span>
-            </div>
-            <p class="mb-1"><strong>Dirección:</strong> @venta.Cliente?.Direccion</p>
-            <p class="mb-1"><strong>Teléfono:</strong> @venta.Cliente?.Telefono</p>
-
-            @if (venta.Detalles.Any())
+    <div class="tab-content">
+        <div class="tab-pane fade show active" id="panelPorEntregar" role="tabpanel">
+            @if (!Model.Any())
             {
-                <ul class="mb-2">
-                    @foreach (var det in venta.Detalles)
-                    {
-                        <li>@det.Producto?.Nombre — @det.Cantidad lb</li>
-                    }
-                </ul>
+                <div class="empty-state">No tienes pedidos asignados por entregar.</div>
             }
+            @foreach (var venta in Model)
+            {
+                <div class="app-card p-3 mb-3">
+                    <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+                        <h5 class="mb-0" style="color: var(--ink);">@(venta.Cliente?.Nombre ?? "Cliente sin nombre")</h5>
+                        <span class="fw-bold" style="color: var(--sage); font-size: 1.1rem;">Q@(venta.Total.ToString("N2"))</span>
+                    </div>
 
-            <form asp-action="MarcarEntregado" asp-route-id="@venta.Id" method="post" onsubmit="return confirm('¿Confirmas que este pedido fue entregado?');">
-                <button type="submit" class="btn btn-success">Marcar como entregado</button>
-            </form>
+                    <partial name="_LineaEstadoPedido" model="venta.EstadoId" />
+
+                    <p class="mb-1 small"><strong>Dirección:</strong> @venta.Cliente?.Direccion</p>
+                    <p class="mb-2 small"><strong>Teléfono:</strong> @venta.Cliente?.Telefono</p>
+
+                    @if (venta.Detalles.Any())
+                    {
+                        <ul class="mb-2 small">
+                            @foreach (var det in venta.Detalles)
+                            {
+                                <li>@det.Producto?.Nombre — @det.Cantidad lb</li>
+                            }
+                        </ul>
+                    }
+
+                    <form asp-action="MarcarEntregado" asp-route-id="@venta.Id" method="post"
+                          class="d-flex gap-2 flex-wrap align-items-center mt-2"
+                          onsubmit="return pedirConfirmacion(this, '¿Confirmas que este pedido fue entregado?');">
+                        <select name="formaPago" class="form-select form-select-sm" style="max-width: 180px;" required
+                                onchange="this.closest('form').querySelector('.inputDetallePago').style.display = this.value === 'Otro' ? 'inline-block' : 'none';">
+                            <option value="">-- Forma de pago --</option>
+                            <option value="Efectivo">Efectivo</option>
+                            <option value="Transferencia">Transferencia</option>
+                            <option value="Otro">Otro</option>
+                        </select>
+                        <input type="text" name="detalleFormaPago" class="form-control form-control-sm inputDetallePago"
+                               style="max-width: 200px; display: none;" placeholder="¿Cómo le pagaron?" />
+                        <button type="submit" class="btn-brand">Marcar como entregado</button>
+                    </form>
+                </div>
+            }
+        </div>
+
+        <div class="tab-pane fade" id="panelEntregadas" role="tabpanel">
+            @if (!entregadas.Any())
+            {
+                <div class="empty-state">Aún no has entregado ningún pedido.</div>
+            }
+            @foreach (var venta in entregadas)
+            {
+                <div class="app-card p-3 mb-3">
+                    <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+                        <h5 class="mb-0" style="color: var(--ink);">@(venta.Cliente?.Nombre ?? "Cliente sin nombre")</h5>
+                        <span class="fw-bold" style="color: var(--sage); font-size: 1.1rem;">Q@(venta.Total.ToString("N2"))</span>
+                    </div>
+                    <p class="mb-1 small"><strong>Dirección:</strong> @venta.Cliente?.Direccion</p>
+                    <p class="mb-1 small"><strong>Entregado:</strong> @venta.FechaEntrega?.ToString("dd/MM/yyyy HH:mm")</p>
+                    <p class="mb-0 small">
+                        <strong>Forma de pago:</strong> <span class="badge-category">@venta.FormaPago</span>
+                        @if (venta.FormaPago == carniceriaApp.Models.FormaPago.Otro && !string.IsNullOrWhiteSpace(venta.DetalleFormaPago))
+                        {
+                            <em style="color: var(--ink-soft);">(@venta.DetalleFormaPago)</em>
+                        }
+                    </p>
+                </div>
+            }
         </div>
     </div>
-}
+</div>

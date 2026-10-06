@@ -20,81 +20,85 @@
     @if (!esPantallaLogin)
     {
         <header>
-            <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
+            <nav class="navbar navbar-app navbar-expand-lg navbar-light mb-3">
                 <div class="container-fluid">
-                    <a class="navbar-brand brand-font" asp-area="" asp-controller="Cuenta" asp-action="Login" style="color: var(--oxblood); font-weight: 700;">carniceriaApp</a>
+                    <a class="navbar-brand" asp-area="" asp-controller="Cuenta" asp-action="Login">carniceriaApp</a>
                     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
                             aria-expanded="false" aria-label="Toggle navigation">
                         <span class="navbar-toggler-icon"></span>
                     </button>
-                    <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
+                    <div class="navbar-collapse collapse d-lg-inline-flex justify-content-between">
                         <ul class="navbar-nav flex-grow-1">
                             @if (User.Identity != null && User.Identity.IsAuthenticated)
                             {
-                                @if (User.IsInRole("Administrador"))
-                                {
-                                    <li class="nav-item">
-                                        <a class="nav-link text-dark" asp-controller="Productos" asp-action="Index">Productos</a>
-                                    </li>
-                                    <li class="nav-item">
-                                        <a class="nav-link text-dark" asp-controller="Usuarios" asp-action="Index">Usuarios</a>
-                                    </li>
-                                    <li class="nav-item">
-                                        <a class="nav-link text-dark" asp-controller="Reportes" asp-action="CuadreDiario">Cuadres</a>
-                                    </li>
-                                    <li class="nav-item">
-                                        <a class="nav-link text-dark" asp-controller="Ventas" asp-action="TodasLasEntregas">Entregas</a>
-                                    </li>
-                                }
-
-                                @if (User.IsInRole("Administrador") || User.IsInRole("CallCenter") || User.IsInRole("Mostrador"))
-                                {
-                                    <li class="nav-item">
-                                        <a class="nav-link text-dark" asp-controller="Clientes" asp-action="Index">Clientes</a>
-                                    </li>
-                                }
-
-                                @if (User.IsInRole("Administrador") || User.IsInRole("CallCenter") || User.IsInRole("Mostrador"))
-                                {
-                                    <li class="nav-item">
-                                        <a class="nav-link text-dark" asp-controller="Ventas" asp-action="Pendientes">Pedidos pendientes</a>
-                                    </li>
-                                }
-
                                 @if (User.IsInRole("Administrador") || User.IsInRole("Mostrador") || User.IsInRole("CallCenter"))
                                 {
                                     <li class="nav-item">
-                                        <a class="nav-link text-dark" asp-controller="Ventas" asp-action="Crear">Crear venta</a>
+                                        <a class="nav-link-app" asp-controller="Ventas" asp-action="Crear"><i class="bi bi-cart-plus"></i> Crear venta</a>
+                                    </li>
+                                }
+
+                                @if (User.IsInRole("Administrador") || User.IsInRole("CallCenter") || User.IsInRole("Mostrador"))
+                                {
+                                    <li class="nav-item">
+                                        <a class="nav-link-app" asp-controller="Ventas" asp-action="Pendientes"><i class="bi bi-hourglass-split"></i> Pedidos pendientes</a>
                                     </li>
                                 }
 
                                 @if (User.IsInRole("Repartidor"))
                                 {
                                     <li class="nav-item">
-                                        <a class="nav-link text-dark" asp-controller="Ventas" asp-action="MisEntregas">Mis entregas</a>
+                                        <a class="nav-link-app" asp-controller="Ventas" asp-action="MisEntregas"><i class="bi bi-truck"></i> Mis entregas</a>
+                                    </li>
+                                }
+
+                                @if (User.IsInRole("Administrador") || User.IsInRole("CallCenter") || User.IsInRole("Mostrador"))
+                                {
+                                    <li class="nav-item">
+                                        <a class="nav-link-app" asp-controller="Ventas" asp-action="TodasLasEntregas"><i class="bi bi-geo-alt"></i> Entregas</a>
+                                    </li>
+                                }
+                                
+                                @if (User.IsInRole("Administrador") || User.IsInRole("CallCenter") || User.IsInRole("Mostrador"))
+                                {
+                                    <li class="nav-item">
+                                        <a class="nav-link-app" asp-controller="Clientes" asp-action="Index"><i class="bi bi-people"></i> Clientes</a>
+                                    </li>
+                                }
+
+                                @if (User.IsInRole("Administrador"))
+                                {
+                                    <li class="nav-item">
+                                        <a class="nav-link-app" asp-controller="Productos" asp-action="Index"><i class="bi bi-tags"></i> Productos</a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a class="nav-link-app" asp-controller="Usuarios" asp-action="Index"><i class="bi bi-person-gear"></i> Usuarios</a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a class="nav-link-app" asp-controller="Reportes" asp-action="CuadreDiario"><i class="bi bi-journal-text"></i> Cuadres</a>
                                     </li>
                                 }
                             }
                         </ul>
 
-                        <ul class="navbar-nav">
+                        <ul class="navbar-nav align-items-lg-center">
                             @if (User.Identity != null && User.Identity.IsAuthenticated)
                             {
                                 var nombreUsuario = User.FindFirst("NombreCompleto")?.Value ?? User.Identity.Name;
 
-                                <li class="nav-item d-flex align-items-center me-3">
-                                    <span class="text-dark">Hola, @nombreUsuario</span>
+                                <li class="nav-item d-flex align-items-center me-lg-3 py-2 py-lg-0">
+                                    <span class="nav-user"><i class="bi bi-person-circle me-1"></i>@nombreUsuario</span>
                                 </li>
                                 <li class="nav-item">
                                     <form asp-controller="Cuenta" asp-action="Logout" method="post" class="form-inline">
-                                        <button type="submit" class="btn btn-link nav-link text-dark">Cerrar sesión</button>
+                                        <button type="submit" class="btn-logout"><i class="bi bi-box-arrow-right"></i> Cerrar sesión</button>
                                     </form>
                                 </li>
                             }
                             else
                             {
                                 <li class="nav-item">
-                                    <a class="nav-link text-dark" asp-controller="Cuenta" asp-action="Login">Iniciar sesión</a>
+                                    <a class="nav-link-app" asp-controller="Cuenta" asp-action="Login">Iniciar sesión</a>
                                 </li>
                             }
                         </ul>
@@ -138,7 +142,48 @@
                     setTimeout(function () {
                         alerta.remove();
                     }, 600);
-                }, 4000); // Se desvanece a los 4 segundos
+                }, 4000);
+            }
+        });
+    </script>
+
+    <!-- Modal de confirmación reutilizable, reemplaza confirm() del navegador -->
+    <div class="modal fade" id="modalConfirmacion" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content" style="border-radius: 16px; border: none;">
+                <div class="modal-body text-center p-4">
+                    <div class="status-card__icon mb-3" style="background-color: #FBF1DE;">
+                        <i class="bi bi-question-circle" style="color: var(--mustard);"></i>
+                    </div>
+                    <h5 id="modalConfirmacionTitulo" class="mb-2">¿Confirmas esta acción?</h5>
+                    <p id="modalConfirmacionTexto" class="text-muted mb-4"></p>
+                    <div class="d-flex gap-2 justify-content-center">
+                        <button type="button" class="btn-outline-brand" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="button" class="btn-brand" id="modalConfirmacionBoton">Confirmar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let formPendienteConfirmacion = null;
+
+        function pedirConfirmacion(form, mensaje) {
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return false;
+            }
+            formPendienteConfirmacion = form;
+            document.getElementById('modalConfirmacionTexto').textContent = mensaje;
+            const modal = new bootstrap.Modal(document.getElementById('modalConfirmacion'));
+            modal.show();
+            return false;
+        }
+
+        document.getElementById('modalConfirmacionBoton').addEventListener('click', function () {
+            if (formPendienteConfirmacion) {
+                formPendienteConfirmacion.submit();
             }
         });
     </script>

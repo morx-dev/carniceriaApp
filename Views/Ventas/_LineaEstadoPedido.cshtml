@@ -1,0 +1,36 @@
+@model int
+@{
+    var pasos = new (int Id, string Nombre, string Icono)[]
+    {
+        (1, "Pendiente", "bi-hourglass-split"),
+        (2, "En preparación", "bi-basket3"),
+        (3, "En camino", "bi-truck"),
+        (4, "Entregado", "bi-check-circle")
+    };
+}
+
+@if (Model == 5)
+{
+    <div class="estado-pedido-cancelado">
+        <i class="bi bi-x-circle-fill"></i> Pedido cancelado
+    </div>
+}
+else
+{
+    <div class="linea-estado-pedido">
+        @for (int i = 0; i < pasos.Length; i++)
+        {
+            var paso = pasos[i];
+            var completado = Model > paso.Id;
+            var actual = Model == paso.Id;
+            <div class="paso-estado @(completado ? "is-completado" : "") @(actual ? "is-actual" : "")">
+                <span class="paso-estado__circulo"><i class="bi @paso.Icono"></i></span>
+                <span class="paso-estado__texto">@paso.Nombre</span>
+            </div>
+            if (i < pasos.Length - 1)
+            {
+                <div class="paso-estado__conector @(completado ? "is-completado" : "")"></div>
+            }
+        }
+    </div>
+}

@@ -14,4 +14,5 @@ public interface ICuentaService
 {
     Task<ResultadoLogin> IniciarSesionAsync(string email, string password, bool recordarMe);
     Task CerrarSesionAsync();
+    Task<(string Controller, string Accion)> ObtenerDestinoSegunRolAsync(Usuario usuario);
 }

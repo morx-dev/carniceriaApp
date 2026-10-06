@@ -1,45 +1,45 @@
 @model List<carniceriaApp.Models.Venta>
 @{
-    ViewData["Title"] = "Todas las entregas";
-    var nombresRepartidores = (Dictionary<string, string>)ViewBag.NombresRepartidores;
+    ViewData["Title"] = "Entregas";
 }
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h2 class="mb-0">Todas las entregas en camino</h2>
-    <button type="button" class="btn btn-outline-secondary" onclick="location.reload()">
-        🔄 Actualizar
-    </button>
+<div class="container app-page">
+    <div class="app-page-header">
+        <h2>Entregas</h2>
+        <button type="button" class="btn-outline-brand" onclick="location.reload()">
+            <i class="bi bi-arrow-clockwise"></i> Actualizar
+        </button>
+    </div>
+
+    <div class="search-toolbar">
+        <input type="text" id="inputBusqueda" class="form-control" style="max-width: 360px;"
+               placeholder="Buscar por dirección..." value="@ViewBag.BusquedaActual" autocomplete="off" autofocus />
+    </div>
+
+    <div id="contenedorEntregas">
+        <partial name="_ListaEntregas" model="Model" />
+    </div>
 </div>
 
-@if (!Model.Any())
-{
-    <p class="text-muted">No hay pedidos en camino en este momento.</p>
-}
+@section Scripts {
+    <script>
+        const inputBusqueda = document.getElementById('inputBusqueda');
+        const contenedor = document.getElementById('contenedorEntregas');
+        let timeout = null;
 
-@foreach (var venta in Model)
-{
-    var nombreRepartidor = venta.RepartidorId != null && nombresRepartidores.ContainsKey(venta.RepartidorId)
-        ? nombresRepartidores[venta.RepartidorId]
-        : "Sin asignar";
+        function realizarBusqueda() {
+            const busqueda = inputBusqueda.value;
+            const url = `@Url.Action("TodasLasEntregas", "Ventas")?busqueda=${encodeURIComponent(busqueda)}`;
 
-    <div class="card mb-3">
-        <div class="card-body">
-            <div class="d-flex justify-content-between">
-                <h5 class="card-title">@(venta.Cliente?.Nombre ?? "Cliente sin nombre")</h5>
-                <span class="fw-bold">Q@(venta.Total.ToString("N2"))</span>
-            </div>
-            <p class="mb-1"><strong>Dirección:</strong> @venta.Cliente?.Direccion</p>
-            <p class="mb-1"><strong>Repartidor:</strong> <span class="badge bg-info text-dark">@nombreRepartidor</span></p>
+            fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                .then(response => response.text())
+                .then(html => { contenedor.innerHTML = html; })
+                .catch(error => console.error('Error al filtrar:', error));
+        }
 
-            @if (venta.Detalles.Any())
-            {
-                <ul class="mb-0">
-                    @foreach (var det in venta.Detalles)
-                    {
-                        <li>@det.Producto?.Nombre — @det.Cantidad lb</li>
-                    }
-                </ul>
-            }
-        </div>
-    </div>
+        inputBusqueda.addEventListener('input', function () {
+            clearTimeout(timeout);
+            timeout = setTimeout(realizarBusqueda, 300);
+        });
+    </script>
 }

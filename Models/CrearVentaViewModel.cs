@@ -4,9 +4,8 @@ public class CrearVentaViewModel
 {
     public int? ClienteId { get; set; }
     public TipoOrigen? TipoOrigenSeleccionado { get; set; }
-    public string? TipoVenta { get; set; } // "Presencial" o "Remota" — solo lo decide Administrador
-    public decimal? MontoTotalPresencial { get; set; } // Venta presencial "calculadora"
-    public string? Observaciones { get; set; } // Venta remota sin captura de productos
+    public string? TipoVenta { get; set; }
+    public decimal? MontoTotalPresencial { get; set; }
     public List<DetalleVentaInputViewModel> Detalles { get; set; } = new();
 }
 
@@ -14,4 +13,5 @@ public class DetalleVentaInputViewModel
 {
     public int ProductoId { get; set; }
     public decimal Cantidad { get; set; }
+    public string? Observacion { get; set; }
 }

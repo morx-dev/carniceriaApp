@@ -6,7 +6,7 @@ using carniceriaApp.Services.Interfaces;
 
 namespace carniceriaApp.Controllers;
 
-[Authorize] // Solo exige estar logueado; el rol específico se valida en cada acción
+[Authorize]
 public class VentasController : Controller
 {
     private readonly IVentaService _ventaService;
@@ -53,25 +53,27 @@ public class VentasController : Controller
     {
         var ventas = await _ventaService.ObtenerPendientesAsync();
         ViewBag.Repartidores = await _ventaService.ObtenerRepartidoresActivosAsync();
+
+        var nombresCreadores = new Dictionary<string, string>();
+        foreach (var venta in ventas)
+        {
+            if (!nombresCreadores.ContainsKey(venta.UsuarioCreadorId))
+            {
+                var creador = await _userManager.FindByIdAsync(venta.UsuarioCreadorId);
+                nombresCreadores[venta.UsuarioCreadorId] = creador?.NombreCompleto ?? "Desconocido";
+            }
+        }
+        ViewBag.NombresCreadores = nombresCreadores;
+
         return View(ventas);
-    }
-
-    [Authorize(Roles = "Administrador,CallCenter")]
-    public async Task<IActionResult> Editar(int id)
-    {
-        var venta = await _ventaService.ObtenerVentaConDetalleAsync(id);
-        if (venta == null) return NotFound();
-
-        ViewBag.Productos = await _ventaService.ObtenerProductosActivosAsync();
-        return View(venta);
     }
 
     [HttpPost]
     [Authorize(Roles = "Administrador,CallCenter")]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Editar(int id, List<DetalleVentaInputViewModel> Detalles, string? Observaciones)
+    public async Task<IActionResult> Editar(int id, List<DetalleVentaInputViewModel> Detalles)
     {
-        var resultado = await _ventaService.ActualizarDetallesAsync(id, Detalles, Observaciones);
+        var resultado = await _ventaService.EditarPedidoAsync(id, Detalles);
 
         TempData[resultado.Exitoso ? "Mensaje" : "Error"] =
             resultado.Exitoso ? "Pedido actualizado correctamente." : resultado.MensajeError;
@@ -85,7 +87,6 @@ public class VentasController : Controller
         var venta = await _ventaService.ObtenerVentaConDetalleAsync(id);
         if (venta == null) return NotFound();
 
-        ViewBag.Productos = await _ventaService.ObtenerProductosActivosAsync();
         return View(venta);
     }
 
@@ -94,16 +95,16 @@ public class VentasController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Despachar(int id, List<DetalleVentaInputViewModel> Detalles)
     {
-        var resultado = await _ventaService.ActualizarDetallesAsync(id, Detalles, null);
+        var resultado = await _ventaService.DespacharAsync(id, Detalles);
 
         TempData[resultado.Exitoso ? "Mensaje" : "Error"] =
-            resultado.Exitoso ? "Cantidades actualizadas correctamente." : resultado.MensajeError;
+            resultado.Exitoso ? "Pedido despachado correctamente." : resultado.MensajeError;
 
         return RedirectToAction(nameof(Pendientes));
     }
 
     [HttpPost]
-    [Authorize(Roles = "Administrador,CallCenter")]
+    [Authorize(Roles = "Administrador,CallCenter,Mostrador")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> AsignarRepartidor(int id, string repartidorId)
     {
@@ -115,21 +116,37 @@ public class VentasController : Controller
         return RedirectToAction(nameof(Pendientes));
     }
 
+    [HttpPost]
+    [Authorize(Roles = "Administrador,CallCenter,Mostrador")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Cancelar(int id)
+    {
+        var resultado = await _ventaService.CancelarAsync(id);
+
+        TempData[resultado.Exitoso ? "Mensaje" : "Error"] =
+            resultado.Exitoso ? "Pedido cancelado." : resultado.MensajeError;
+
+        return RedirectToAction(nameof(Pendientes));
+    }
+
     [Authorize(Roles = "Repartidor")]
     public async Task<IActionResult> MisEntregas()
     {
         var usuarioId = _userManager.GetUserId(User) ?? string.Empty;
-        var ventas = await _ventaService.ObtenerAsignadasARepartidorAsync(usuarioId);
-        return View(ventas);
+        var pendientes = await _ventaService.ObtenerAsignadasARepartidorAsync(usuarioId);
+        var entregadas = await _ventaService.ObtenerEntregadasPorRepartidorAsync(usuarioId);
+
+        ViewBag.Entregadas = entregadas;
+        return View(pendientes);
     }
 
     [HttpPost]
     [Authorize(Roles = "Repartidor")]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> MarcarEntregado(int id)
+    public async Task<IActionResult> MarcarEntregado(int id, FormaPago formaPago, string? detalleFormaPago)
     {
         var usuarioId = _userManager.GetUserId(User) ?? string.Empty;
-        var resultado = await _ventaService.MarcarEntregadoAsync(id, usuarioId);
+        var resultado = await _ventaService.MarcarEntregadoAsync(id, usuarioId, formaPago, detalleFormaPago);
 
         TempData[resultado.Exitoso ? "Mensaje" : "Error"] =
             resultado.Exitoso ? "Pedido marcado como entregado." : resultado.MensajeError;
@@ -137,26 +154,14 @@ public class VentasController : Controller
         return RedirectToAction(nameof(MisEntregas));
     }
 
-    private bool EsVentaRemota(CrearVentaViewModel modelo)
+    [Authorize(Roles = "Administrador,CallCenter,Mostrador")]
+    public async Task<IActionResult> TodasLasEntregas(string? busqueda)
     {
-        if (User.IsInRole("Mostrador")) return false;
-        if (User.IsInRole("CallCenter")) return true;
-        return modelo.TipoVenta == "Remota"; // Administrador decide
-    }
-
-    private async Task CargarListasAsync()
-    {
-        ViewBag.Productos = await _ventaService.ObtenerProductosActivosAsync();
-        ViewBag.Clientes = await _ventaService.ObtenerClientesActivosAsync();
-    }
-
-
-    [Authorize(Roles = "Administrador")]
-    public async Task<IActionResult> TodasLasEntregas()
-    {
-        var ventas = await _ventaService.ObtenerTodasEnCaminoAsync();
+        var ventas = await _ventaService.ObtenerEntregasAsync(busqueda);
 
         var nombresRepartidores = new Dictionary<string, string>();
+        var nombresCreadores = new Dictionary<string, string>();
+
         foreach (var venta in ventas)
         {
             if (venta.RepartidorId != null && !nombresRepartidores.ContainsKey(venta.RepartidorId))
@@ -164,11 +169,37 @@ public class VentasController : Controller
                 var repartidor = await _userManager.FindByIdAsync(venta.RepartidorId);
                 nombresRepartidores[venta.RepartidorId] = repartidor?.NombreCompleto ?? "Desconocido";
             }
+
+            if (!string.IsNullOrEmpty(venta.UsuarioCreadorId) && !nombresCreadores.ContainsKey(venta.UsuarioCreadorId))
+            {
+                var creador = await _userManager.FindByIdAsync(venta.UsuarioCreadorId);
+                nombresCreadores[venta.UsuarioCreadorId] = creador?.NombreCompleto ?? "Desconocido";
+            }
         }
 
         ViewBag.NombresRepartidores = nombresRepartidores;
+        ViewBag.NombresCreadores = nombresCreadores;
+        ViewBag.BusquedaActual = busqueda;
+
+        if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+        {
+            return PartialView("_ListaEntregas", ventas);
+        }
+
         return View(ventas);
     }
 
+    private bool EsVentaRemota(CrearVentaViewModel modelo)
+    {
+        if (User.IsInRole("CallCenter")) return true;
+        if (User.IsInRole("Administrador") || User.IsInRole("Mostrador"))
+            return modelo.TipoVenta == "Remota";
+        return false;
+    }
 
+    private async Task CargarListasAsync()
+    {
+        ViewBag.Productos = await _ventaService.ObtenerProductosActivosAsync();
+        ViewBag.Clientes = await _ventaService.ObtenerClientesActivosAsync();
+    }
 }

@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using carniceriaApp.Data;
 
@@ -11,9 +12,11 @@ using carniceriaApp.Data;
 namespace carniceriaApp.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260930033100_AgregarObservacionPorLineaYFueEditado")]
+    partial class AgregarObservacionPorLineaYFueEditado
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -458,9 +461,6 @@ namespace carniceriaApp.Migrations
                     b.Property<int?>("ClienteId")
                         .HasColumnType("int");
 
-                    b.Property<string>("DetalleFormaPago")
-                        .HasColumnType("longtext");
-
                     b.Property<int>("EstadoId")
                         .HasColumnType("int");
 
@@ -469,9 +469,6 @@ namespace carniceriaApp.Migrations
 
                     b.Property<DateTime?>("FechaEntrega")
                         .HasColumnType("datetime(6)");
-
-                    b.Property<int?>("FormaPago")
-                        .HasColumnType("int");
 
                     b.Property<bool>("FueEditado")
                         .HasColumnType("tinyint(1)");

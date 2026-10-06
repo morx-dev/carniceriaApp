@@ -49,7 +49,7 @@ public class CuentaService : ICuentaService
         };
     }
 
-    private async Task<(string controller, string accion)> ObtenerDestinoSegunRolAsync(Usuario usuario)
+    public async Task<(string Controller, string Accion)> ObtenerDestinoSegunRolAsync(Usuario usuario)
     {
         var roles = await _userManager.GetRolesAsync(usuario);
 
@@ -57,7 +57,7 @@ public class CuentaService : ICuentaService
             return ("Productos", "Index");
 
         if (roles.Contains("CallCenter"))
-            return ("Ventas", "Crear");
+            return ("Ventas", "Pendientes");
 
         if (roles.Contains("Mostrador"))
             return ("Ventas", "Crear");
@@ -65,7 +65,7 @@ public class CuentaService : ICuentaService
         if (roles.Contains("Repartidor"))
             return ("Ventas", "MisEntregas");
 
-        return ("Home", "Index");
+        return ("Cuenta", "Login");
     }
 
     public async Task CerrarSesionAsync()

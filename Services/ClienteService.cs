@@ -28,7 +28,7 @@ public class ClienteService : IClienteService
             query = query.Where(c => (int)c.Sector == sector.Value);
         }
 
-        return await query.OrderBy(c => c.Nombre).ToListAsync();
+        return await query.OrderByDescending(p => p.Id).ToListAsync();
     }
 
     public async Task<Cliente?> ObtenerPorIdAsync(int id)

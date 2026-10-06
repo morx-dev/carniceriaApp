@@ -1,6 +1,7 @@
 namespace carniceriaApp.Models;
 
 public enum TipoOrigen { Presencial, WhatsApp, Llamada }
+public enum FormaPago { Efectivo, Transferencia, Otro }
 
 public class Venta
 {
@@ -18,6 +19,10 @@ public class Venta
 
     public decimal Total { get; set; }
     public string? Observaciones { get; set; }
+    public FormaPago? FormaPago { get; set; }
+    public string? DetalleFormaPago { get; set; }
+
+    public bool FueEditado { get; set; } = false;
 
     public DateTime FechaCreacion { get; set; } = DateTime.Now;
     public DateTime? FechaEntrega { get; set; }

@@ -38,9 +38,45 @@ public class VentaService : IVentaService
         return await _context.Ventas
             .Include(v => v.Cliente)
             .Include(v => v.Detalles).ThenInclude(d => d.Producto)
-            .Where(v => v.EstadoId == 1) // Pendiente
+            .Where(v => v.EstadoId == 1 || v.EstadoId == 2)
             .OrderBy(v => v.FechaCreacion)
             .ToListAsync();
+    }
+
+    public async Task<List<Venta>> ObtenerAsignadasARepartidorAsync(string repartidorId)
+    {
+        return await _context.Ventas
+            .Include(v => v.Cliente)
+            .Include(v => v.Detalles).ThenInclude(d => d.Producto)
+            .Where(v => v.RepartidorId == repartidorId && v.EstadoId == 3)
+            .OrderBy(v => v.FechaCreacion)
+            .ToListAsync();
+    }
+
+    public async Task<List<Venta>> ObtenerEntregadasPorRepartidorAsync(string repartidorId)
+    {
+        return await _context.Ventas
+            .Include(v => v.Cliente)
+            .Include(v => v.Detalles).ThenInclude(d => d.Producto)
+            .Where(v => v.RepartidorId == repartidorId && v.EstadoId == 4)
+            .OrderByDescending(v => v.FechaEntrega)
+            .ToListAsync();
+    }
+
+    public async Task<List<Venta>> ObtenerEntregasAsync(string? busquedaDireccion)
+    {
+        var query = _context.Ventas
+            .Include(v => v.Cliente)
+            .Include(v => v.Detalles).ThenInclude(d => d.Producto)
+            .Where(v => v.EstadoId == 3 || v.EstadoId == 4)
+            .AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(busquedaDireccion))
+        {
+            query = query.Where(v => v.Cliente != null && v.Cliente.Direccion.Contains(busquedaDireccion));
+        }
+
+        return await query.OrderByDescending(v => v.FechaCreacion).ToListAsync();
     }
 
     public async Task<Venta?> ObtenerVentaConDetalleAsync(int id)
@@ -62,7 +98,7 @@ public class VentaService : IVentaService
         {
             ClienteId = null,
             TipoOrigen = TipoOrigen.Presencial,
-            EstadoId = 4, // Entregado — inmediato
+            EstadoId = 4,
             UsuarioCreadorId = usuarioId,
             Total = modelo.MontoTotalPresencial.Value,
             FechaCreacion = DateTime.Now,
@@ -82,32 +118,19 @@ public class VentaService : IVentaService
             return new ResultadoOperacion { Exitoso = false, MensajeError = "Debes seleccionar un cliente." };
         }
 
-        bool usaObservacion = !string.IsNullOrWhiteSpace(modelo.Observaciones);
-
         var venta = new Venta
         {
             ClienteId = modelo.ClienteId,
             TipoOrigen = modelo.TipoOrigenSeleccionado ?? TipoOrigen.WhatsApp,
-            EstadoId = 1, // Pendiente
+            EstadoId = 1,
             UsuarioCreadorId = usuarioId,
             FechaCreacion = DateTime.Now
         };
 
-        if (usaObservacion)
-        {
-            venta.Observaciones = modelo.Observaciones;
-            venta.Total = 0;
-
-            _context.Ventas.Add(venta);
-            await _context.SaveChangesAsync();
-
-            return new ResultadoOperacion { Exitoso = true };
-        }
-
         return await ArmarYGuardarVentaAsync(venta, modelo.Detalles);
     }
 
-    public async Task<ResultadoOperacion> ActualizarDetallesAsync(int ventaId, List<DetalleVentaInputViewModel> detalles, string? observaciones)
+    public async Task<ResultadoOperacion> EditarPedidoAsync(int ventaId, List<DetalleVentaInputViewModel> detalles)
     {
         var venta = await _context.Ventas.Include(v => v.Detalles).FirstOrDefaultAsync(v => v.Id == ventaId);
         if (venta == null)
@@ -117,9 +140,117 @@ public class VentaService : IVentaService
 
         if (venta.EstadoId != 1)
         {
-            return new ResultadoOperacion { Exitoso = false, MensajeError = "Esta venta ya no se puede editar." };
+            return new ResultadoOperacion { Exitoso = false, MensajeError = "Este pedido ya no se puede editar (debe estar Pendiente)." };
         }
 
+        var resultado = await ReemplazarDetallesAsync(venta, detalles);
+        if (!resultado.Exitoso) return resultado;
+
+        venta.FueEditado = true;
+        await _context.SaveChangesAsync();
+
+        return new ResultadoOperacion { Exitoso = true };
+    }
+
+    public async Task<ResultadoOperacion> DespacharAsync(int ventaId, List<DetalleVentaInputViewModel> detalles)
+    {
+        var venta = await _context.Ventas.Include(v => v.Detalles).FirstOrDefaultAsync(v => v.Id == ventaId);
+        if (venta == null)
+        {
+            return new ResultadoOperacion { Exitoso = false, MensajeError = "Venta no encontrada." };
+        }
+
+        if (venta.EstadoId != 1)
+        {
+            return new ResultadoOperacion { Exitoso = false, MensajeError = "Este pedido ya fue despachado o no está pendiente." };
+        }
+
+        var resultado = await ReemplazarDetallesAsync(venta, detalles);
+        if (!resultado.Exitoso) return resultado;
+
+        venta.EstadoId = 2;
+        await _context.SaveChangesAsync();
+
+        return new ResultadoOperacion { Exitoso = true };
+    }
+
+    public async Task<ResultadoOperacion> AsignarRepartidorAsync(int ventaId, string repartidorId)
+    {
+        var venta = await _context.Ventas.FindAsync(ventaId);
+        if (venta == null)
+        {
+            return new ResultadoOperacion { Exitoso = false, MensajeError = "Venta no encontrada." };
+        }
+
+        if (venta.EstadoId != 2)
+        {
+            return new ResultadoOperacion { Exitoso = false, MensajeError = "Este pedido debe despacharse (ajustar el peso real) antes de asignar un repartidor." };
+        }
+
+        venta.RepartidorId = repartidorId;
+        venta.EstadoId = 3;
+
+        await _context.SaveChangesAsync();
+
+        return new ResultadoOperacion { Exitoso = true };
+    }
+
+    public async Task<ResultadoOperacion> MarcarEntregadoAsync(int ventaId, string repartidorId, FormaPago formaPago, string? detalleFormaPago)
+    {
+        var venta = await _context.Ventas.FindAsync(ventaId);
+        if (venta == null)
+        {
+            return new ResultadoOperacion { Exitoso = false, MensajeError = "Venta no encontrada." };
+        }
+
+        if (venta.RepartidorId != repartidorId)
+        {
+            return new ResultadoOperacion { Exitoso = false, MensajeError = "Este pedido no está asignado a ti." };
+        }
+
+        if (venta.EstadoId != 3)
+        {
+            return new ResultadoOperacion { Exitoso = false, MensajeError = "Este pedido no está en camino." };
+        }
+
+        venta.EstadoId = 4;
+        venta.FechaEntrega = DateTime.Now;
+        venta.FormaPago = formaPago;
+        venta.DetalleFormaPago = formaPago == FormaPago.Otro && !string.IsNullOrWhiteSpace(detalleFormaPago)
+            ? detalleFormaPago.Trim()
+            : null;
+
+        await _context.SaveChangesAsync();
+
+        return new ResultadoOperacion { Exitoso = true };
+    }
+
+    public async Task<ResultadoOperacion> CancelarAsync(int ventaId)
+    {
+        var venta = await _context.Ventas.FindAsync(ventaId);
+        if (venta == null)
+        {
+            return new ResultadoOperacion { Exitoso = false, MensajeError = "Venta no encontrada." };
+        }
+
+        if (venta.EstadoId == 4)
+        {
+            return new ResultadoOperacion { Exitoso = false, MensajeError = "No se puede cancelar un pedido ya entregado." };
+        }
+
+        if (venta.EstadoId == 5)
+        {
+            return new ResultadoOperacion { Exitoso = false, MensajeError = "Este pedido ya está cancelado." };
+        }
+
+        venta.EstadoId = 5;
+        await _context.SaveChangesAsync();
+
+        return new ResultadoOperacion { Exitoso = true };
+    }
+
+    private async Task<ResultadoOperacion> ReemplazarDetallesAsync(Venta venta, List<DetalleVentaInputViewModel> detalles)
+    {
         _context.DetalleVentas.RemoveRange(venta.Detalles);
         venta.Detalles.Clear();
 
@@ -139,43 +270,20 @@ public class VentaService : IVentaService
                     ProductoId = producto.Id,
                     Cantidad = item.Cantidad,
                     PrecioUnitario = producto.PrecioActual.Value,
-                    Subtotal = subtotal
+                    Subtotal = subtotal,
+                    Observaciones = string.IsNullOrWhiteSpace(item.Observacion) ? null : item.Observacion.Trim()
                 });
 
                 total += subtotal;
             }
         }
 
+        if (!venta.Detalles.Any())
+        {
+            return new ResultadoOperacion { Exitoso = false, MensajeError = "El pedido debe tener al menos un producto." };
+        }
+
         venta.Total = total;
-
-        if (observaciones != null)
-        {
-            venta.Observaciones = observaciones;
-        }
-
-        await _context.SaveChangesAsync();
-
-        return new ResultadoOperacion { Exitoso = true };
-    }
-
-    public async Task<ResultadoOperacion> AsignarRepartidorAsync(int ventaId, string repartidorId)
-    {
-        var venta = await _context.Ventas.FindAsync(ventaId);
-        if (venta == null)
-        {
-            return new ResultadoOperacion { Exitoso = false, MensajeError = "Venta no encontrada." };
-        }
-
-        if (venta.EstadoId != 1)
-        {
-            return new ResultadoOperacion { Exitoso = false, MensajeError = "Esta venta ya fue asignada o no está pendiente." };
-        }
-
-        venta.RepartidorId = repartidorId;
-        venta.EstadoId = 3; // En camino
-
-        await _context.SaveChangesAsync();
-
         return new ResultadoOperacion { Exitoso = true };
     }
 
@@ -201,7 +309,8 @@ public class VentaService : IVentaService
                 ProductoId = producto.Id,
                 Cantidad = item.Cantidad,
                 PrecioUnitario = precioUnitario,
-                Subtotal = subtotal
+                Subtotal = subtotal,
+                Observaciones = string.IsNullOrWhiteSpace(item.Observacion) ? null : item.Observacion.Trim()
             });
 
             total += subtotal;
@@ -219,53 +328,4 @@ public class VentaService : IVentaService
 
         return new ResultadoOperacion { Exitoso = true };
     }
-
-    public async Task<List<Venta>> ObtenerAsignadasARepartidorAsync(string repartidorId)
-    {
-        return await _context.Ventas
-            .Include(v => v.Cliente)
-            .Include(v => v.Detalles).ThenInclude(d => d.Producto)
-            .Where(v => v.RepartidorId == repartidorId && v.EstadoId == 3) // En camino
-            .OrderBy(v => v.FechaCreacion)
-            .ToListAsync();
-    }
-
-    public async Task<ResultadoOperacion> MarcarEntregadoAsync(int ventaId, string repartidorId)
-    {
-        var venta = await _context.Ventas.FindAsync(ventaId);
-        if (venta == null)
-        {
-            return new ResultadoOperacion { Exitoso = false, MensajeError = "Venta no encontrada." };
-        }
-
-        if (venta.RepartidorId != repartidorId)
-        {
-            return new ResultadoOperacion { Exitoso = false, MensajeError = "Este pedido no está asignado a ti." };
-        }
-
-        if (venta.EstadoId != 3)
-        {
-            return new ResultadoOperacion { Exitoso = false, MensajeError = "Este pedido no está en camino." };
-        }
-
-        venta.EstadoId = 4; // Entregado
-        venta.FechaEntrega = DateTime.Now;
-
-        await _context.SaveChangesAsync();
-
-        return new ResultadoOperacion { Exitoso = true };
-    }
-
-
-    public async Task<List<Venta>> ObtenerTodasEnCaminoAsync()
-    {
-        return await _context.Ventas
-            .Include(v => v.Cliente)
-            .Include(v => v.Detalles).ThenInclude(d => d.Producto)
-            .Where(v => v.EstadoId == 3) // En camino
-            .OrderBy(v => v.FechaCreacion)
-            .ToListAsync();
-    }
-
-
 }

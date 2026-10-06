@@ -1,14 +1,36 @@
-using System.Diagnostics;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using carniceriaApp.Models;
+using carniceriaApp.Services.Interfaces;
 
 namespace carniceriaApp.Controllers;
 
 public class HomeController : Controller
 {
-    public IActionResult Index()
+    private readonly UserManager<Usuario> _userManager;
+    private readonly ICuentaService _cuentaService;
+
+    public HomeController(UserManager<Usuario> userManager, ICuentaService cuentaService)
     {
-        return View();
+        _userManager = userManager;
+        _cuentaService = cuentaService;
+    }
+
+    public async Task<IActionResult> Index()
+    {
+        if (User.Identity == null || !User.Identity.IsAuthenticated)
+        {
+            return RedirectToAction("Login", "Cuenta");
+        }
+
+        var usuario = await _userManager.GetUserAsync(User);
+        if (usuario == null)
+        {
+            return RedirectToAction("Login", "Cuenta");
+        }
+
+        var (controller, accion) = await _cuentaService.ObtenerDestinoSegunRolAsync(usuario);
+        return RedirectToAction(accion, controller);
     }
 
     public IActionResult Privacy()
@@ -16,9 +38,8 @@ public class HomeController : Controller
         return View();
     }
 
-    [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
     public IActionResult Error()
     {
-        return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+        return View();
     }
 }

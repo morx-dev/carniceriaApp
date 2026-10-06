@@ -1,0 +1,56 @@
+@model List<carniceriaApp.Models.Venta>
+@{
+    var nombresRepartidores = (Dictionary<string, string>)ViewBag.NombresRepartidores ?? new Dictionary<string, string>();
+    var nombresCreadores = (Dictionary<string, string>)ViewBag.NombresCreadores ?? new Dictionary<string, string>();
+}
+
+@if (!Model.Any())
+{
+    <div class="empty-state">No se encontraron pedidos con esos filtros.</div>
+}
+
+@foreach (var venta in Model)
+{
+    var nombreRepartidor = venta.RepartidorId != null && nombresRepartidores.ContainsKey(venta.RepartidorId)
+        ? nombresRepartidores[venta.RepartidorId]
+        : "Sin asignar";
+
+    <div class="app-card p-3 mb-3">
+        <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+            <div>
+                <h5 class="mb-0" style="color: var(--ink);">@(venta.Cliente?.Nombre ?? "Cliente sin nombre")</h5>
+                <p class="mb-0 small" style="color: var(--ink-soft);">
+                    <i class="bi bi-person"></i> @(nombresCreadores.ContainsKey(venta.UsuarioCreadorId) ? nombresCreadores[venta.UsuarioCreadorId] : "Desconocido")
+                    &middot; <i class="bi bi-calendar3"></i> @venta.FechaCreacion.ToString("dd/MM/yyyy")
+                </p>
+            </div>
+            <span class="fw-bold" style="color: var(--sage); font-size: 1.1rem;">Q@(venta.Total.ToString("N2"))</span>
+        </div>
+
+        <partial name="_LineaEstadoPedido" model="venta.EstadoId" />
+
+        <p class="mb-1 small"><strong>Dirección:</strong> @venta.Cliente?.Direccion</p>
+        <p class="mb-2 small"><strong>Repartidor:</strong> <span class="badge-category">@nombreRepartidor</span></p>
+
+        @if (venta.EstadoId == 4 && venta.FormaPago != null)
+        {
+            <p class="mb-2 small">
+                <strong>Forma de pago:</strong> <span class="badge-status-active">@venta.FormaPago</span>
+                @if (venta.FormaPago == carniceriaApp.Models.FormaPago.Otro && !string.IsNullOrWhiteSpace(venta.DetalleFormaPago))
+                {
+                    <em style="color: var(--ink-soft);">(@venta.DetalleFormaPago)</em>
+                }
+            </p>
+        }
+
+        @if (venta.Detalles.Any())
+        {
+            <ul class="mb-0 small">
+                @foreach (var det in venta.Detalles)
+                {
+                    <li>@det.Producto?.Nombre — @det.Cantidad lb</li>
+                }
+            </ul>
+        }
+    </div>
+}
