@@ -7,6 +7,7 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://+:8080
+      - TZ=America/Guatemala
       - ConnectionStrings__DefaultConnection=server=mysql_db;port=3306;database=carniceria_db;user=root;password=TU_PASSWORD_SEGURO;
     depends_on:
       mysql_db:

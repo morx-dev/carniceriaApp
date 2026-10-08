@@ -1,7 +1,6 @@
 @model List<carniceriaApp.Models.Venta>
 @{
-    var nombresRepartidores = (Dictionary<string, string>)ViewBag.NombresRepartidores ?? new Dictionary<string, string>();
-    var nombresCreadores = (Dictionary<string, string>)ViewBag.NombresCreadores ?? new Dictionary<string, string>();
+    var nombresRepartidores = (Dictionary<string, string>)ViewBag.NombresRepartidores;
 }
 
 @if (!Model.Any())
@@ -11,46 +10,58 @@
 
 @foreach (var venta in Model)
 {
-    var nombreRepartidor = venta.RepartidorId != null && nombresRepartidores.ContainsKey(venta.RepartidorId)
-        ? nombresRepartidores[venta.RepartidorId]
-        : "Sin asignar";
-
-    <div class="app-card p-3 mb-3">
-        <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
-            <div>
-                <h5 class="mb-0" style="color: var(--ink);">@(venta.Cliente?.Nombre ?? "Cliente sin nombre")</h5>
-                <p class="mb-0 small" style="color: var(--ink-soft);">
-                    <i class="bi bi-person"></i> @(nombresCreadores.ContainsKey(venta.UsuarioCreadorId) ? nombresCreadores[venta.UsuarioCreadorId] : "Desconocido")
-                    &middot; <i class="bi bi-calendar3"></i> @venta.FechaCreacion.ToString("dd/MM/yyyy")
-                </p>
+    @if (venta.TipoOrigen == carniceriaApp.Models.TipoOrigen.Presencial)
+    {
+        <div class="app-card p-3 mb-3">
+            <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+                <h5 class="mb-0" style="color: var(--ink);">
+                    <i class="bi bi-shop"></i> Venta de mostrador
+                </h5>
+                <span class="fw-bold" style="color: var(--sage); font-size: 1.1rem;">Q@(venta.Total.ToString("N2"))</span>
             </div>
-            <span class="fw-bold" style="color: var(--sage); font-size: 1.1rem;">Q@(venta.Total.ToString("N2"))</span>
-        </div>
-
-        <partial name="_LineaEstadoPedido" model="venta.EstadoId" />
-
-        <p class="mb-1 small"><strong>Dirección:</strong> @venta.Cliente?.Direccion</p>
-        <p class="mb-2 small"><strong>Repartidor:</strong> <span class="badge-category">@nombreRepartidor</span></p>
-
-        @if (venta.EstadoId == 4 && venta.FormaPago != null)
-        {
-            <p class="mb-2 small">
-                <strong>Forma de pago:</strong> <span class="badge-status-active">@venta.FormaPago</span>
-                @if (venta.FormaPago == carniceriaApp.Models.FormaPago.Otro && !string.IsNullOrWhiteSpace(venta.DetalleFormaPago))
-                {
-                    <em style="color: var(--ink-soft);">(@venta.DetalleFormaPago)</em>
-                }
+            <p class="mb-0 small mt-2" style="color: var(--ink-soft);">
+                <span class="badge-status-active">Entregado</span>
+                <span class="ms-2">@venta.FechaCreacion.ToString("dd/MM/yyyy")</span>
             </p>
-        }
+        </div>
+    }
+    else
+    {
+        var nombreRepartidor = venta.RepartidorId != null && nombresRepartidores.ContainsKey(venta.RepartidorId)
+            ? nombresRepartidores[venta.RepartidorId]
+            : "Sin asignar";
 
-        @if (venta.Detalles.Any())
-        {
-            <ul class="mb-0 small">
-                @foreach (var det in venta.Detalles)
-                {
-                    <li>@det.Producto?.Nombre — @det.Cantidad lb</li>
-                }
-            </ul>
-        }
-    </div>
+        <div class="app-card p-3 mb-3">
+            <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+                <h5 class="mb-0" style="color: var(--ink);">@(venta.Cliente?.Nombre ?? "Cliente sin nombre")</h5>
+                <span class="fw-bold" style="color: var(--sage); font-size: 1.1rem;">Q@(venta.Total.ToString("N2"))</span>
+            </div>
+
+            <partial name="_LineaEstadoPedido" model="venta.EstadoId" />
+
+            <p class="mb-1 small"><strong>Dirección:</strong> @venta.Cliente?.Direccion</p>
+            <p class="mb-2 small"><strong>Repartidor:</strong> <span class="badge-category">@nombreRepartidor</span></p>
+
+            @if (venta.EstadoId == 4 && venta.FormaPago != null)
+            {
+                <p class="mb-2 small">
+                    <strong>Forma de pago:</strong> <span class="badge-status-active">@venta.FormaPago</span>
+                    @if (venta.FormaPago == carniceriaApp.Models.FormaPago.Otro && !string.IsNullOrWhiteSpace(venta.DetalleFormaPago))
+                    {
+                        <em style="color: var(--ink-soft);">(@venta.DetalleFormaPago)</em>
+                    }
+                </p>
+            }
+
+            @if (venta.Detalles.Any())
+            {
+                <ul class="mb-0 small">
+                    @foreach (var det in venta.Detalles)
+                    {
+                        <li>@det.Producto?.Nombre — @det.Cantidad lb</li>
+                    }
+                </ul>
+            }
+        </div>
+    }
 }

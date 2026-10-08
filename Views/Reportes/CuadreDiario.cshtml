@@ -1,0 +1,68 @@
+@model carniceriaApp.Models.CuadreDiario
+@{
+    ViewData["Title"] = "Cuadre diario";
+    var resumen = ViewBag.Resumen as carniceriaApp.Services.Interfaces.ResumenCuadre;
+}
+
+<div class="container app-page">
+    <div class="app-page-header">
+        <h2>Cuadre diario — @DateTime.Today.ToString("dd/MM/yyyy")</h2>
+        <a asp-action="Historial" class="btn-outline-brand">
+            <i class="bi bi-clock-history"></i> Ver historial
+        </a>
+    </div>
+
+    @if (TempData["Mensaje"] != null)
+    {
+        <div class="alert alert-app-success">@TempData["Mensaje"]</div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger">@TempData["Error"]</div>
+    }
+
+    @if (Model != null)
+    {
+        <div class="app-card p-4">
+            <p class="mb-3" style="color: var(--sage); font-weight: 600;">
+                <i class="bi bi-check-circle-fill"></i> El día ya fue cerrado.
+            </p>
+            <dl class="row mb-0">
+                <dt class="col-sm-4">Ventas presenciales</dt>
+                <dd class="col-sm-8">Q@(Model.TotalVentasPresenciales.ToString("N2"))</dd>
+
+                <dt class="col-sm-4">Ventas remotas entregadas</dt>
+                <dd class="col-sm-8">Q@(Model.TotalVentasSistema.ToString("N2"))</dd>
+
+                <dt class="col-sm-4 fw-bold">Total general</dt>
+                <dd class="col-sm-8 fw-bold" style="color: var(--sage); font-size: 1.2rem;">Q@(Model.TotalGeneral.ToString("N2"))</dd>
+
+                <dt class="col-sm-4">Cerrado el</dt>
+                <dd class="col-sm-8">@Model.FechaCreacion.ToString("dd/MM/yyyy")</dd>
+            </dl>
+        </div>
+    }
+    else
+    {
+        <div class="app-card p-4">
+            <p class="mb-3" style="color: var(--ink-soft);">Resumen preliminar (aún no se ha cerrado el día):</p>
+            <dl class="row mb-4">
+                <dt class="col-sm-4">Ventas presenciales</dt>
+                <dd class="col-sm-8">Q@(resumen?.TotalPresencial.ToString("N2"))</dd>
+
+                <dt class="col-sm-4">Ventas remotas entregadas</dt>
+                <dd class="col-sm-8">Q@(resumen?.TotalSistema.ToString("N2"))</dd>
+
+                <dt class="col-sm-4 fw-bold">Total general</dt>
+                <dd class="col-sm-8 fw-bold" style="color: var(--sage); font-size: 1.2rem;">Q@(resumen?.TotalGeneral.ToString("N2"))</dd>
+            </dl>
+
+            <form asp-action="CerrarDia" method="post"
+                  onsubmit="return pedirConfirmacion(this, 'Una vez cerrado el día, no podrás modificarlo. ¿Confirmas?');">
+                <button type="submit" class="btn-brand">
+                    <i class="bi bi-lock-fill"></i> Cerrar el día
+                </button>
+            </form>
+        </div>
+    }
+</div>

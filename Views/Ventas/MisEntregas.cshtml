@@ -67,7 +67,7 @@
                           class="d-flex gap-2 flex-wrap align-items-center mt-2"
                           onsubmit="return pedirConfirmacion(this, '¿Confirmas que este pedido fue entregado?');">
                         <select name="formaPago" class="form-select form-select-sm" style="max-width: 180px;" required
-                                onchange="this.closest('form').querySelector('.inputDetallePago').style.display = this.value === 'Otro' ? 'inline-block' : 'none';">
+                                onchange="const campo = this.closest('form').querySelector('.inputDetallePago'); const esOtro = this.value === 'Otro'; campo.style.display = esOtro ? 'inline-block' : 'none'; campo.required = esOtro; if (!esOtro) campo.value = '';">
                             <option value="">-- Forma de pago --</option>
                             <option value="Efectivo">Efectivo</option>
                             <option value="Transferencia">Transferencia</option>

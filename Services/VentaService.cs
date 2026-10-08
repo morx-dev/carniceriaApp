@@ -195,7 +195,7 @@ public class VentaService : IVentaService
         return new ResultadoOperacion { Exitoso = true };
     }
 
-    public async Task<ResultadoOperacion> MarcarEntregadoAsync(int ventaId, string repartidorId, FormaPago formaPago, string? detalleFormaPago)
+        public async Task<ResultadoOperacion> MarcarEntregadoAsync(int ventaId, string repartidorId, FormaPago formaPago, string? detalleFormaPago)
     {
         var venta = await _context.Ventas.FindAsync(ventaId);
         if (venta == null)
@@ -211,6 +211,11 @@ public class VentaService : IVentaService
         if (venta.EstadoId != 3)
         {
             return new ResultadoOperacion { Exitoso = false, MensajeError = "Este pedido no está en camino." };
+        }
+
+        if (formaPago == FormaPago.Otro && string.IsNullOrWhiteSpace(detalleFormaPago))
+        {
+            return new ResultadoOperacion { Exitoso = false, MensajeError = "Debes especificar cómo te pagaron cuando eliges 'Otro'." };
         }
 
         venta.EstadoId = 4;

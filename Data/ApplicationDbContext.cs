@@ -70,6 +70,10 @@ public class ApplicationDbContext : IdentityDbContext<Usuario>
             .Property(c => c.TotalGeneral)
             .HasPrecision(10, 2);
 
+            builder.Entity<CuadreDiario>()
+            .HasIndex(c => c.Fecha)
+            .IsUnique();
+
         builder.Entity<Venta>()
             .HasOne(v => v.Cliente)
             .WithMany()

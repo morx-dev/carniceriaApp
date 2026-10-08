@@ -1,0 +1,217 @@
+@model List<carniceriaApp.Models.Venta>
+@{
+    ViewData["Title"] = "Historial de cuadres";
+    var fechaSeleccionada = (DateTime)ViewBag.FechaSeleccionada;
+    var cuadre = ViewBag.Cuadre as carniceriaApp.Models.CuadreDiario;
+    var nombresCreadores = (Dictionary<string, string>)ViewBag.NombresCreadores;
+
+    // Más reciente primero. Mostrador: por hora de creación. Remotas: por hora en que se entregaron (cuando entran al cuadre).
+    var ventasPresenciales = Model
+        .Where(v => v.TipoOrigen == carniceriaApp.Models.TipoOrigen.Presencial)
+        .OrderByDescending(v => v.FechaCreacion)
+        .ToList();
+
+    var ventasRemotas = Model
+        .Where(v => v.TipoOrigen != carniceriaApp.Models.TipoOrigen.Presencial)
+        .OrderByDescending(v => v.FechaEntrega)
+        .ToList();
+
+    var totalPresencial = ventasPresenciales.Sum(v => v.Total);
+    var totalRemoto = ventasRemotas.Sum(v => v.Total);
+    var totalDia = totalPresencial + totalRemoto;
+}
+
+<div class="container app-page">
+    <div class="app-page-header">
+        <h2>Historial de cuadres</h2>
+        <a asp-action="CuadreDiario" class="btn-outline-brand">
+            <i class="bi bi-arrow-left"></i> Volver a hoy
+        </a>
+    </div>
+
+    <form method="get" class="search-toolbar">
+        <input type="date" name="fecha" class="form-control" style="max-width: 220px;"
+               value="@fechaSeleccionada.ToString("yyyy-MM-dd")"
+               onchange="this.form.submit()" />
+    </form>
+
+    @if (cuadre != null)
+    {
+        <p class="mb-3" style="color: var(--sage); font-weight: 600;">
+            <i class="bi bi-check-circle-fill"></i> Este día fue cerrado el @cuadre.FechaCreacion.ToString("dd/MM/yyyy").
+        </p>
+    }
+    else
+    {
+        <p class="mb-3" style="color: var(--ink-soft);">
+            <i class="bi bi-exclamation-circle"></i> Este día todavía no ha sido cerrado. Los montos mostrados son calculados en tiempo real.
+        </p>
+    }
+
+    <div class="app-card p-4 mb-4 text-center">
+        <div style="font-size: 0.9rem; color: var(--ink-soft); font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em;">
+            Total venta del día — @fechaSeleccionada.ToString("dd/MM/yyyy")
+        </div>
+        <div style="font-size: 2.5rem; font-weight: 700; color: var(--sage); font-family: var(--font-display);">
+            Q@(totalDia.ToString("N2"))
+        </div>
+        <div class="d-flex justify-content-center gap-4 mt-2 flex-wrap">
+            <span class="badge-category">Mostrador: Q@(totalPresencial.ToString("N2"))</span>
+            <span class="badge-status-active">Remotas: Q@(totalRemoto.ToString("N2"))</span>
+        </div>
+    </div>
+
+    <ul class="nav app-tabs mb-3" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#panelMostrador" type="button" role="tab">
+                Mostrador <span class="badge-count">@ventasPresenciales.Count</span>
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#panelRemotas" type="button" role="tab">
+                Remotas <span class="badge-count">@ventasRemotas.Count</span>
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content">
+        <!-- ===== MOSTRADOR ===== -->
+        <div class="tab-pane fade show active" id="panelMostrador" role="tabpanel">
+            @if (!ventasPresenciales.Any())
+            {
+                <div class="empty-state">No hubo ventas de mostrador este día.</div>
+            }
+            else
+            {
+                <div class="app-table-wrap d-none d-md-block">
+                    <div class="table-responsive">
+                        <table class="table app-table align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Creador</th>
+                                    <th>Fecha</th>
+                                    <th>Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var venta in ventasPresenciales)
+                                {
+                                    <tr>
+                                        <td>@(nombresCreadores.ContainsKey(venta.UsuarioCreadorId) ? nombresCreadores[venta.UsuarioCreadorId] : "Desconocido")</td>
+                                        <td>@venta.FechaCreacion.ToString("dd/MM/yyyy")</td>
+                                        <td class="fw-bold" style="color: var(--sage);">Q@(venta.Total.ToString("N2"))</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="mobile-card-list d-md-none">
+                    @foreach (var venta in ventasPresenciales)
+                    {
+                        <div class="mobile-item-card">
+                            <div class="mobile-item-card__header">
+                                <span class="mobile-item-card__title">@(nombresCreadores.ContainsKey(venta.UsuarioCreadorId) ? nombresCreadores[venta.UsuarioCreadorId] : "Desconocido")</span>
+                                <span class="mobile-item-card__price">Q@(venta.Total.ToString("N2"))</span>
+                            </div>
+                            <p class="mb-0 small" style="color: var(--ink-soft);">@venta.FechaCreacion.ToString("dd/MM/yyyy")</p>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+
+        <!-- ===== REMOTAS ===== -->
+        <div class="tab-pane fade" id="panelRemotas" role="tabpanel">
+            @if (!ventasRemotas.Any())
+            {
+                <div class="empty-state">No hubo ventas remotas entregadas este día.</div>
+            }
+            else
+            {
+                <div class="app-table-wrap d-none d-md-block">
+                    <div class="table-responsive">
+                        <table class="table app-table align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Creador</th>
+                                    <th>Cliente</th>
+                                    <th>Dirección</th>
+                                    <th>Detalle</th>
+                                    <th>Entregado</th>
+                                    <th>Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var venta in ventasRemotas)
+                                {
+                                    <tr>
+                                        <td>@(nombresCreadores.ContainsKey(venta.UsuarioCreadorId) ? nombresCreadores[venta.UsuarioCreadorId] : "Desconocido")</td>
+                                        <td>@(venta.Cliente?.Nombre ?? "—")</td>
+                                        <td class="text-break">@(venta.Cliente?.Direccion ?? "—")</td>
+                                        <td>
+                                            @if (venta.Detalles.Any())
+                                            {
+                                                <ul class="mb-0 ps-3 small">
+                                                    @foreach (var det in venta.Detalles)
+                                                    {
+                                                        <li>
+                                                            @det.Producto?.Nombre — @det.Cantidad lb &times; Q@(det.PrecioUnitario.ToString("N2")) = <strong>Q@(det.Subtotal.ToString("N2"))</strong>
+                                                            @if (!string.IsNullOrWhiteSpace(det.Observaciones))
+                                                            {
+                                                                <em style="color: var(--ink-soft);">(@det.Observaciones)</em>
+                                                            }
+                                                        </li>
+                                                    }
+                                                </ul>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted small">Sin detalle</span>
+                                            }
+                                        </td>
+                                        <td>@venta.FechaEntrega?.ToString("dd/MM/yyyy")</td>
+                                        <td class="fw-bold" style="color: var(--sage);">Q@(venta.Total.ToString("N2"))</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="mobile-card-list d-md-none">
+                    @foreach (var venta in ventasRemotas)
+                    {
+                        <div class="mobile-item-card">
+                            <div class="mobile-item-card__header">
+                                <span class="mobile-item-card__title">@(venta.Cliente?.Nombre ?? "Cliente sin nombre")</span>
+                                <span class="mobile-item-card__price">Q@(venta.Total.ToString("N2"))</span>
+                            </div>
+                            <p class="mb-1 small" style="color: var(--ink-soft);">@(venta.Cliente?.Direccion ?? "—")</p>
+                            <p class="mb-1 small">Creó: @(nombresCreadores.ContainsKey(venta.UsuarioCreadorId) ? nombresCreadores[venta.UsuarioCreadorId] : "Desconocido")</p>
+
+                            @if (venta.Detalles.Any())
+                            {
+                                <ul class="mb-1 ps-3 small">
+                                    @foreach (var det in venta.Detalles)
+                                    {
+                                        <li>
+                                            @det.Producto?.Nombre — @det.Cantidad lb &times; Q@(det.PrecioUnitario.ToString("N2")) = <strong>Q@(det.Subtotal.ToString("N2"))</strong>
+                                            @if (!string.IsNullOrWhiteSpace(det.Observaciones))
+                                            {
+                                                <em style="color: var(--ink-soft);">(@det.Observaciones)</em>
+                                            }
+                                        </li>
+                                    }
+                                </ul>
+                            }
+
+                            <p class="mb-0 small" style="color: var(--ink-soft);">Entregado: @venta.FechaEntrega?.ToString("dd/MM/yyyy")</p>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+</div>

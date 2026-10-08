@@ -13,6 +13,7 @@ public interface IReporteService
 {
     Task<CuadreDiario?> ObtenerCuadrePorFechaAsync(DateTime fecha);
     Task<ResumenCuadre> CalcularResumenDelDiaAsync(DateTime fecha);
+    Task<List<Venta>> ObtenerVentasDelDiaAsync(DateTime fecha);
     Task<List<CuadreDiario>> ObtenerHistorialAsync();
     Task<ResultadoOperacion> CerrarDiaAsync(string usuarioId);
 }
