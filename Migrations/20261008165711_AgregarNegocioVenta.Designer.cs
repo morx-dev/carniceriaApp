@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using carniceriaApp.Data;
 
@@ -11,9 +12,11 @@ using carniceriaApp.Data;
 namespace carniceriaApp.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20261008165711_AgregarNegocioVenta")]
+    partial class AgregarNegocioVenta
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -206,9 +209,6 @@ namespace carniceriaApp.Migrations
                     b.Property<DateTime>("FechaCreacion")
                         .HasColumnType("datetime(6)");
 
-                    b.Property<int>("Negocio")
-                        .HasColumnType("int");
-
                     b.Property<decimal>("TotalAntojitosGeneral")
                         .HasPrecision(10, 2)
                         .HasColumnType("decimal(10,2)");
@@ -239,7 +239,7 @@ namespace carniceriaApp.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Fecha", "Negocio")
+                    b.HasIndex("Fecha")
                         .IsUnique();
 
                     b.ToTable("CuadresDiarios");

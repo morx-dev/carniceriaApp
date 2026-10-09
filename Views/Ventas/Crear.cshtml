@@ -6,6 +6,9 @@
     var esAdmin = User.IsInRole("Administrador");
     var esCallCenter = User.IsInRole("CallCenter");
     var esMostrador = User.IsInRole("Mostrador");
+
+    // Si el servidor devolvió el formulario con un error, se vuelve al modo que el usuario tenía
+    var iniciaRemota = esCallCenter || Model.TipoVenta == "Remota";
 }
 
 <div class="container app-page">
@@ -39,11 +42,11 @@
                     <label class="form-label-app">Tipo de venta</label>
                     <div>
                         <div class="form-check form-check-inline">
-                            <input class="form-check-input" type="radio" name="TipoVenta" id="tipoPresencial" value="Presencial" checked onclick="toggleTipoVenta(false)" />
+                            <input class="form-check-input" type="radio" name="TipoVenta" id="tipoPresencial" value="Presencial" checked="@(!iniciaRemota)" onclick="toggleTipoVenta(false)" />
                             <label class="form-check-label" for="tipoPresencial">Presencial</label>
                         </div>
                         <div class="form-check form-check-inline">
-                            <input class="form-check-input" type="radio" name="TipoVenta" id="tipoRemota" value="Remota" onclick="toggleTipoVenta(true)" />
+                            <input class="form-check-input" type="radio" name="TipoVenta" id="tipoRemota" value="Remota" checked="@iniciaRemota" onclick="toggleTipoVenta(true)" />
                             <label class="form-check-label" for="tipoRemota">Remota (WhatsApp / Llamada)</label>
                         </div>
                     </div>
@@ -51,15 +54,29 @@
             }
 
             <!-- SECCIÓN PRESENCIAL: calculadora, sin productos -->
-            <div id="seccionPresencial" style="display: @((esCallCenter) ? "none" : "block");">
+            <div id="seccionPresencial" style="display: @(iniciaRemota ? "none" : "block");">
+                <div class="mb-3">
+                    <label class="form-label-app">Negocio</label>
+                    <div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="NegocioPresencial" id="negCarniceria" value="Carniceria" checked="@(Model.NegocioPresencial != carniceriaApp.Models.TipoNegocio.Antojitos)" />
+                            <label class="form-check-label" for="negCarniceria">Carnicería</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="NegocioPresencial" id="negAntojitos" value="Antojitos" checked="@(Model.NegocioPresencial == carniceriaApp.Models.TipoNegocio.Antojitos)" />
+                            <label class="form-check-label" for="negAntojitos">Antojitos</label>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="mb-3">
                     <label class="form-label-app">Monto total de la venta (Q)</label>
-                    <input type="number" name="MontoTotalPresencial" class="form-control form-control-app" step="0.01" min="0.01" placeholder="Ej. 56.00" />
+                    <input type="number" name="MontoTotalPresencial" value="@Model.MontoTotalPresencial" class="form-control form-control-app" step="0.01" min="0.01" placeholder="Ej. 56.00" />
                 </div>
             </div>
 
             <!-- SECCIÓN REMOTA -->
-            <div id="seccionRemota" style="display: @((esCallCenter) ? "block" : "none");">
+            <div id="seccionRemota" style="display: @(iniciaRemota ? "block" : "none");">
 
                 <div class="mb-3">
                     <label class="form-label-app">Buscar cliente por dirección</label>
@@ -73,11 +90,11 @@
                     <label class="form-label-app">Origen del pedido</label>
                     <div>
                         <div class="form-check form-check-inline">
-                            <input class="form-check-input" type="radio" name="TipoOrigenSeleccionado" value="WhatsApp" checked />
+                            <input class="form-check-input" type="radio" name="TipoOrigenSeleccionado" value="WhatsApp" checked="@(Model.TipoOrigenSeleccionado != carniceriaApp.Models.TipoOrigen.Llamada)" />
                             <label class="form-check-label">WhatsApp</label>
                         </div>
                         <div class="form-check form-check-inline">
-                            <input class="form-check-input" type="radio" name="TipoOrigenSeleccionado" value="Llamada" />
+                            <input class="form-check-input" type="radio" name="TipoOrigenSeleccionado" value="Llamada" checked="@(Model.TipoOrigenSeleccionado == carniceriaApp.Models.TipoOrigen.Llamada)" />
                             <label class="form-check-label">Llamada</label>
                         </div>
                     </div>
@@ -151,6 +168,12 @@
     const clientesData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
         clientes.Select(c => new { id = c.Id, nombre = c.Nombre, direccion = c.Direccion, telefono = c.Telefono })));
 
+    // Datos que el usuario ya había capturado (solo tienen contenido si el servidor devolvió un error)
+    const clienteIdPrevio = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ClienteId));
+    const detallesPrevios = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+        (Model.Detalles ?? new List<carniceriaApp.Models.DetalleVentaInputViewModel>())
+            .Select(d => new { productoId = d.ProductoId, cantidad = d.Cantidad, observacion = d.Observacion ?? "" })));
+
     let contador = 0;
     let total = 0;
 
@@ -200,19 +223,52 @@
         });
     }
 
+    // Copia de todas las opciones originales (se guardan una sola vez al cargar la página)
+    const selectProductoEl = document.getElementById('selectProducto');
+    const todasLasOpciones = Array.from(selectProductoEl.options)
+        .filter(o => o.value)
+        .map(o => o.cloneNode(true));
+
     const filtroCategoria = document.getElementById('filtroCategoria');
     if (filtroCategoria) {
         filtroCategoria.addEventListener('change', function () {
             const categoriaSeleccionada = this.value;
-            const selectProducto = document.getElementById('selectProducto');
 
-            Array.from(selectProducto.options).forEach(opcion => {
-                if (!opcion.value) return;
-                opcion.hidden = categoriaSeleccionada !== '' && opcion.dataset.categoria !== categoriaSeleccionada;
+            // Vaciar el select y dejar solo el placeholder
+            selectProductoEl.innerHTML = '<option value="">-- Selecciona un producto --</option>';
+
+            // Volver a agregar solo las opciones de la categoría elegida
+            todasLasOpciones.forEach(opcion => {
+                if (categoriaSeleccionada === '' || opcion.dataset.categoria === categoriaSeleccionada) {
+                    selectProductoEl.appendChild(opcion.cloneNode(true));
+                }
             });
 
-            selectProducto.value = '';
+            selectProductoEl.value = '';
         });
+    }
+
+    // Dibuja la fila en modo normal a partir de los datos guardados en ella
+    function renderFila(fila) {
+        const nombre = fila.dataset.nombre;
+        const cantidad = parseFloat(fila.dataset.cantidad);
+        const observacion = fila.dataset.observacion;
+        const precio = parseFloat(fila.dataset.precio);
+        const subtotal = parseFloat(fila.dataset.subtotal);
+
+        fila.innerHTML = `
+            <td>${nombre}</td>
+            <td class="celda-cantidad">${cantidad}</td>
+            <td>${observacion ? observacion : '<span class="text-muted">—</span>'}</td>
+            <td>Q${precio.toFixed(2)}</td>
+            <td>Q${subtotal.toFixed(2)}</td>
+            <td class="celda-acciones">
+                <div class="d-flex gap-1 flex-wrap">
+                    <button type="button" class="btn-soft-brand" onclick="editarCantidad(this)">Editar</button>
+                    <button type="button" class="btn-soft-danger" onclick="eliminarFila(this)">Quitar</button>
+                </div>
+            </td>
+        `;
     }
 
     function agregarProducto() {
@@ -236,15 +292,12 @@
 
         const fila = document.createElement('tr');
         fila.dataset.indice = contador;
+        fila.dataset.nombre = nombre;
+        fila.dataset.precio = precio;
+        fila.dataset.cantidad = cantidad;
+        fila.dataset.observacion = observacion;
         fila.dataset.subtotal = subtotal;
-        fila.innerHTML = `
-            <td>${nombre}</td>
-            <td>${cantidad}</td>
-            <td>${observacion ? observacion : '<span class="text-muted">—</span>'}</td>
-            <td>Q${precio.toFixed(2)}</td>
-            <td>Q${subtotal.toFixed(2)}</td>
-            <td><button type="button" class="btn-soft-danger" onclick="eliminarFila(this)">Quitar</button></td>
-        `;
+        renderFila(fila);
         document.getElementById('cuerpoDetalle').appendChild(fila);
 
         const inputsOcultos = document.getElementById('inputsOcultos');
@@ -279,6 +332,53 @@
         observacionInput.value = '';
     }
 
+    // Convierte la celda de cantidad en un campo editable
+    function editarCantidad(boton) {
+        const fila = boton.closest('tr');
+
+        fila.querySelector('.celda-cantidad').innerHTML =
+            `<input type="number" step="0.01" min="0.01" class="form-control form-control-sm input-editar-cantidad" style="min-width: 90px;" value="${fila.dataset.cantidad}" />`;
+
+        fila.querySelector('.celda-acciones').innerHTML = `
+            <div class="d-flex gap-1 flex-wrap">
+                <button type="button" class="btn-brand" onclick="guardarCantidad(this)">Guardar</button>
+                <button type="button" class="btn-outline-brand" onclick="cancelarEdicion(this)">Cancelar</button>
+            </div>
+        `;
+
+        fila.querySelector('.input-editar-cantidad').focus();
+    }
+
+    function guardarCantidad(boton) {
+        const fila = boton.closest('tr');
+        const nuevaCantidad = parseFloat(fila.querySelector('.input-editar-cantidad').value);
+
+        if (isNaN(nuevaCantidad) || nuevaCantidad <= 0) {
+            mostrarError('Ingresa una cantidad válida.');
+            return;
+        }
+
+        const precio = parseFloat(fila.dataset.precio);
+        const subtotalAnterior = parseFloat(fila.dataset.subtotal);
+        const nuevoSubtotal = precio * nuevaCantidad;
+
+        total += nuevoSubtotal - subtotalAnterior;
+
+        fila.dataset.cantidad = nuevaCantidad;
+        fila.dataset.subtotal = nuevoSubtotal;
+
+        // Actualiza el valor que realmente se envía al servidor
+        const inputCantidadOculto = document.querySelector(`input[name="Detalles[${fila.dataset.indice}].Cantidad"]`);
+        if (inputCantidadOculto) inputCantidadOculto.value = nuevaCantidad;
+
+        renderFila(fila);
+        document.getElementById('totalVenta').textContent = `Q${total.toFixed(2)}`;
+    }
+
+    function cancelarEdicion(boton) {
+        renderFila(boton.closest('tr'));
+    }
+
     function eliminarFila(boton) {
         const fila = boton.closest('tr');
         const indice = fila.dataset.indice;
@@ -291,9 +391,40 @@
         document.getElementById('totalVenta').textContent = `Q${total.toFixed(2)}`;
     }
 
+    // Restaura lo capturado si el servidor devolvió el formulario con un error
+    (function restaurarCaptura() {
+        if (clienteIdPrevio) {
+            const c = clientesData.find(x => x.id === clienteIdPrevio);
+            if (c) {
+                clienteIdHidden.value = c.id;
+                clienteSeleccionadoDiv.textContent = `Cliente seleccionado: ${c.nombre} (${c.direccion})`;
+            }
+        }
+
+        detallesPrevios.forEach(d => {
+            if (!d.productoId || d.cantidad <= 0) return;
+            selectProductoEl.value = d.productoId;
+            document.getElementById('inputCantidad').value = d.cantidad;
+            document.getElementById('inputObservacion').value = d.observacion;
+            agregarProducto();
+        });
+    })();
+
     document.getElementById('formVenta').addEventListener('submit', function (e) {
         const esRemota = document.getElementById('seccionRemota').style.display === 'block';
         if (!esRemota) return;
+
+        if (!clienteIdHidden.value) {
+            e.preventDefault();
+            mostrarError('Debes seleccionar un cliente.');
+            return;
+        }
+
+        if (document.querySelector('.input-editar-cantidad')) {
+            e.preventDefault();
+            mostrarError('Guarda o cancela la edición de cantidad antes de guardar la venta.');
+            return;
+        }
 
         if (document.getElementById('cuerpoDetalle').children.length === 0) {
             e.preventDefault();

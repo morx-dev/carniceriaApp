@@ -70,9 +70,23 @@ public class ApplicationDbContext : IdentityDbContext<Usuario>
             .Property(c => c.TotalGeneral)
             .HasPrecision(10, 2);
 
-            builder.Entity<CuadreDiario>()
-            .HasIndex(c => c.Fecha)
+        // Un cuadre por día Y por negocio
+        builder.Entity<CuadreDiario>()
+            .HasIndex(c => new { c.Fecha, c.Negocio })
             .IsUnique();
+
+        // Dentro de OnModelCreating(ModelBuilder builder), añade estas líneas junto a los demás CuadreDiario:
+        builder.Entity<CuadreDiario>()
+            .Property(c => c.TotalAntojitosPresenciales)
+            .HasPrecision(10, 2);
+
+        builder.Entity<CuadreDiario>()
+            .Property(c => c.TotalAntojitosSistema)
+            .HasPrecision(10, 2);
+
+        builder.Entity<CuadreDiario>()
+            .Property(c => c.TotalAntojitosGeneral)
+            .HasPrecision(10, 2);
 
         builder.Entity<Venta>()
             .HasOne(v => v.Cliente)

@@ -21,25 +21,39 @@ public class ReportesController : Controller
     public async Task<IActionResult> CuadreDiario()
     {
         var hoy = DateTime.Today;
-        var cuadreDeHoy = await _reporteService.ObtenerCuadrePorFechaAsync(hoy);
 
-        if (cuadreDeHoy == null)
-        {
-            ViewBag.Resumen = await _reporteService.CalcularResumenDelDiaAsync(hoy);
-        }
+        var cuadreCarniceria = await _reporteService.ObtenerCuadrePorFechaAsync(hoy, TipoNegocio.Carniceria);
+        var cuadreAntojitos = await _reporteService.ObtenerCuadrePorFechaAsync(hoy, TipoNegocio.Antojitos);
 
-        return View(cuadreDeHoy);
+        ViewBag.CuadreCarniceria = cuadreCarniceria;
+        ViewBag.CuadreAntojitos = cuadreAntojitos;
+
+        if (cuadreCarniceria == null)
+            ViewBag.ResumenCarniceria = await _reporteService.CalcularResumenDelDiaAsync(hoy, TipoNegocio.Carniceria);
+
+        if (cuadreAntojitos == null)
+            ViewBag.ResumenAntojitos = await _reporteService.CalcularResumenDelDiaAsync(hoy, TipoNegocio.Antojitos);
+
+        return View();
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> CerrarDia()
+    public async Task<IActionResult> CerrarDia(TipoNegocio negocio, DateTime? fecha)
     {
         var usuarioId = _userManager.GetUserId(User) ?? string.Empty;
-        var resultado = await _reporteService.CerrarDiaAsync(usuarioId);
+        var resultado = await _reporteService.CerrarDiaAsync(usuarioId, negocio, fecha);
+
+        var nombre = negocio == TipoNegocio.Antojitos ? "Antojitos" : "Carnicería";
 
         TempData[resultado.Exitoso ? "Mensaje" : "Error"] =
-            resultado.Exitoso ? "El día se cerró correctamente." : resultado.MensajeError;
+            resultado.Exitoso ? $"El día se cerró correctamente para {nombre}." : resultado.MensajeError;
+
+        // Si se cerró un día pasado, se vuelve al historial de esa fecha
+        if (fecha.HasValue && fecha.Value.Date < DateTime.Today)
+        {
+            return RedirectToAction(nameof(Historial), new { fecha = fecha.Value.ToString("yyyy-MM-dd") });
+        }
 
         return RedirectToAction(nameof(CuadreDiario));
     }
@@ -49,7 +63,6 @@ public class ReportesController : Controller
         var fechaSeleccionada = fecha?.Date ?? DateTime.Today;
 
         var ventas = await _reporteService.ObtenerVentasDelDiaAsync(fechaSeleccionada);
-        var cuadre = await _reporteService.ObtenerCuadrePorFechaAsync(fechaSeleccionada);
 
         var nombresCreadores = new Dictionary<string, string>();
         foreach (var venta in ventas)
@@ -62,8 +75,12 @@ public class ReportesController : Controller
         }
 
         ViewBag.FechaSeleccionada = fechaSeleccionada;
-        ViewBag.Cuadre = cuadre;
         ViewBag.NombresCreadores = nombresCreadores;
+
+        ViewBag.CuadreCarniceria = await _reporteService.ObtenerCuadrePorFechaAsync(fechaSeleccionada, TipoNegocio.Carniceria);
+        ViewBag.CuadreAntojitos = await _reporteService.ObtenerCuadrePorFechaAsync(fechaSeleccionada, TipoNegocio.Antojitos);
+        ViewBag.ResumenCarniceria = await _reporteService.CalcularResumenDelDiaAsync(fechaSeleccionada, TipoNegocio.Carniceria);
+        ViewBag.ResumenAntojitos = await _reporteService.CalcularResumenDelDiaAsync(fechaSeleccionada, TipoNegocio.Antojitos);
 
         return View(ventas);
     }

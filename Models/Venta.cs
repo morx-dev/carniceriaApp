@@ -2,6 +2,7 @@ namespace carniceriaApp.Models;
 
 public enum TipoOrigen { Presencial, WhatsApp, Llamada }
 public enum FormaPago { Efectivo, Transferencia, Otro }
+public enum TipoNegocio { Carniceria, Antojitos }
 
 public class Venta
 {
@@ -28,4 +29,5 @@ public class Venta
     public DateTime? FechaEntrega { get; set; }
 
     public List<DetalleVenta> Detalles { get; set; } = new();
+    public TipoNegocio Negocio { get; set; } = TipoNegocio.Carniceria;
 }

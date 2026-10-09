@@ -68,6 +68,23 @@ public class VentasController : Controller
         return View(ventas);
     }
 
+    // NUEVO: abre el formulario de edición (antes solo existía el POST y por eso daba 405)
+    [Authorize(Roles = "Administrador,CallCenter")]
+    public async Task<IActionResult> Editar(int id)
+    {
+        var venta = await _ventaService.ObtenerVentaConDetalleAsync(id);
+        if (venta == null) return NotFound();
+
+        if (venta.EstadoId != 1)
+        {
+            TempData["Error"] = "Este pedido ya no se puede editar (debe estar Pendiente).";
+            return RedirectToAction(nameof(Pendientes));
+        }
+
+        ViewBag.Productos = await _ventaService.ObtenerProductosActivosAsync();
+        return View(venta);
+    }
+
     [HttpPost]
     [Authorize(Roles = "Administrador,CallCenter")]
     [ValidateAntiForgeryToken]

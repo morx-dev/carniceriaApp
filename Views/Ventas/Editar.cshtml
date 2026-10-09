@@ -202,16 +202,25 @@
 
     detallesExistentes.forEach(d => crearFila(d.productoId, d.nombre, d.precio, d.cantidad, d.observacion));
 
+    // Copia de todas las opciones originales (se guardan una sola vez al cargar la página)
+    const selectProductoEl = document.getElementById('selectProducto');
+    const todasLasOpciones = Array.from(selectProductoEl.options)
+        .filter(o => o.value)
+        .map(o => o.cloneNode(true));
+
+    // Filtro por categoría: recrea las opciones (funciona en computadora y teléfono)
     document.getElementById('filtroCategoria').addEventListener('change', function () {
         const categoriaSeleccionada = this.value;
-        const selectProducto = document.getElementById('selectProducto');
 
-        Array.from(selectProducto.options).forEach(opcion => {
-            if (!opcion.value) return;
-            opcion.hidden = categoriaSeleccionada !== '' && opcion.dataset.categoria !== categoriaSeleccionada;
+        selectProductoEl.innerHTML = '<option value="">-- Selecciona un producto --</option>';
+
+        todasLasOpciones.forEach(opcion => {
+            if (categoriaSeleccionada === '' || opcion.dataset.categoria === categoriaSeleccionada) {
+                selectProductoEl.appendChild(opcion.cloneNode(true));
+            }
         });
 
-        selectProducto.value = '';
+        selectProductoEl.value = '';
     });
 
     function agregarProducto() {

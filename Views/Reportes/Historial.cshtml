@@ -2,7 +2,10 @@
 @{
     ViewData["Title"] = "Historial de cuadres";
     var fechaSeleccionada = (DateTime)ViewBag.FechaSeleccionada;
-    var cuadre = ViewBag.Cuadre as carniceriaApp.Models.CuadreDiario;
+    var cuadreCarniceria = ViewBag.CuadreCarniceria as carniceriaApp.Models.CuadreDiario;
+    var cuadreAntojitos = ViewBag.CuadreAntojitos as carniceriaApp.Models.CuadreDiario;
+    var resumenCarniceria = (carniceriaApp.Services.Interfaces.ResumenNegocio)ViewBag.ResumenCarniceria;
+    var resumenAntojitos = (carniceriaApp.Services.Interfaces.ResumenNegocio)ViewBag.ResumenAntojitos;
     var nombresCreadores = (Dictionary<string, string>)ViewBag.NombresCreadores;
 
     // Más reciente primero. Mostrador: por hora de creación. Remotas: por hora en que se entregaron (cuando entran al cuadre).
@@ -16,9 +19,28 @@
         .OrderByDescending(v => v.FechaEntrega)
         .ToList();
 
-    var totalPresencial = ventasPresenciales.Sum(v => v.Total);
-    var totalRemoto = ventasRemotas.Sum(v => v.Total);
-    var totalDia = totalPresencial + totalRemoto;
+    // Ayudantes para saber a qué negocio pertenece una venta remota (según las categorías de sus líneas)
+    Func<carniceriaApp.Models.DetalleVenta, bool> esLineaAntojitos = d =>
+        d.Producto != null && d.Producto.Categoria == carniceriaApp.Models.CategoriaProducto.Antojitos;
+
+    Func<carniceriaApp.Models.Venta, bool> remotaTieneAntojitos = v =>
+        v.Detalles != null && v.Detalles.Any(d => esLineaAntojitos(d));
+
+    Func<carniceriaApp.Models.Venta, bool> remotaTieneCarniceria = v =>
+        v.Detalles == null || !v.Detalles.Any() || v.Detalles.Any(d => !esLineaAntojitos(d));
+
+    // ===== CARNICERÍA (calculado por el servicio con su propio corte) =====
+    var totalCarniceriaPresencial = resumenCarniceria.Presencial;
+    var totalCarniceriaRemoto = resumenCarniceria.Remoto;
+    var totalCarniceriaDia = resumenCarniceria.Total;
+
+    // ===== ANTOJITOS (calculado por el servicio con su propio corte) =====
+    var totalAntojitosPresencial = resumenAntojitos.Presencial;
+    var totalAntojitosRemoto = resumenAntojitos.Remoto;
+    var totalAntojitosDia = resumenAntojitos.Total;
+
+    // ===== GRAN TOTAL (ambos negocios) =====
+    var totalDia = totalCarniceriaDia + totalAntojitosDia;
 }
 
 <div class="container app-page">
@@ -35,29 +57,92 @@
                onchange="this.form.submit()" />
     </form>
 
-    @if (cuadre != null)
+    @if (TempData["Mensaje"] != null)
     {
-        <p class="mb-3" style="color: var(--sage); font-weight: 600;">
-            <i class="bi bi-check-circle-fill"></i> Este día fue cerrado el @cuadre.FechaCreacion.ToString("dd/MM/yyyy").
-        </p>
+        <div class="alert alert-app-success">@TempData["Mensaje"]</div>
     }
-    else
+    @if (TempData["Error"] != null)
     {
-        <p class="mb-3" style="color: var(--ink-soft);">
-            <i class="bi bi-exclamation-circle"></i> Este día todavía no ha sido cerrado. Los montos mostrados son calculados en tiempo real.
-        </p>
+        <div class="alert alert-danger">@TempData["Error"]</div>
     }
 
-    <div class="app-card p-4 mb-4 text-center">
+    @foreach (var estado in new[] {
+        new { Nombre = "Carnicería", Valor = "Carniceria", Cuadre = cuadreCarniceria },
+        new { Nombre = "Antojitos", Valor = "Antojitos", Cuadre = cuadreAntojitos } })
+    {
+        if (estado.Cuadre != null)
+        {
+            <p class="mb-1" style="color: var(--sage); font-weight: 600;">
+                <i class="bi bi-check-circle-fill"></i> @estado.Nombre: cerrado el @estado.Cuadre.FechaCreacion.ToString("dd/MM/yyyy HH:mm").
+            </p>
+        }
+        else if (fechaSeleccionada.Date < DateTime.Today)
+        {
+            <form asp-action="CerrarDia" method="post" class="d-flex align-items-center gap-2 flex-wrap mb-2"
+                  onsubmit="return pedirConfirmacion(this, 'Se cerrará @estado.Nombre del @fechaSeleccionada.ToString("dd/MM/yyyy") y no podrás modificarlo. ¿Confirmas?');">
+                <input type="hidden" name="negocio" value="@estado.Valor" />
+                <input type="hidden" name="fecha" value="@fechaSeleccionada.ToString("yyyy-MM-dd")" />
+                <span style="color: var(--ink-soft);">
+                    <i class="bi bi-exclamation-circle"></i> @estado.Nombre: este día no se cerró.
+                </span>
+                <button type="submit" class="btn-brand">
+                    <i class="bi bi-lock-fill"></i> Cerrar este día
+                </button>
+            </form>
+        }
+        else
+        {
+            <p class="mb-1" style="color: var(--ink-soft);">
+                <i class="bi bi-exclamation-circle"></i> @estado.Nombre: todavía no ha sido cerrado (montos en tiempo real).
+            </p>
+        }
+    }
+    <div class="mb-3"></div>
+
+    <!-- GRAN TOTAL DEL DÍA (Carnicería + Antojitos) -->
+    <div class="app-card p-4 mb-3 text-center">
         <div style="font-size: 0.9rem; color: var(--ink-soft); font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em;">
-            Total venta del día — @fechaSeleccionada.ToString("dd/MM/yyyy")
+            Gran total del día (ambos negocios) — @fechaSeleccionada.ToString("dd/MM/yyyy")
         </div>
         <div style="font-size: 2.5rem; font-weight: 700; color: var(--sage); font-family: var(--font-display);">
             Q@(totalDia.ToString("N2"))
         </div>
         <div class="d-flex justify-content-center gap-4 mt-2 flex-wrap">
-            <span class="badge-category">Mostrador: Q@(totalPresencial.ToString("N2"))</span>
-            <span class="badge-status-active">Remotas: Q@(totalRemoto.ToString("N2"))</span>
+            <span class="badge-category">Carnicería: Q@(totalCarniceriaDia.ToString("N2"))</span>
+            <span class="badge-status-active">Antojitos: Q@(totalAntojitosDia.ToString("N2"))</span>
+        </div>
+    </div>
+
+    <!-- UN BLOQUE POR NEGOCIO -->
+    <div class="row g-3 mb-4">
+        <div class="col-12 col-md-6">
+            <div class="app-card p-4 text-center h-100">
+                <div style="font-size: 0.85rem; color: var(--ink-soft); font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em;">
+                    Carnicería
+                </div>
+                <div style="font-size: 2rem; font-weight: 700; color: var(--sage); font-family: var(--font-display);">
+                    Q@(totalCarniceriaDia.ToString("N2"))
+                </div>
+                <div class="d-flex justify-content-center gap-3 mt-1 flex-wrap">
+                    <span class="small" style="color: var(--ink-soft);">Presencial: Q@(totalCarniceriaPresencial.ToString("N2"))</span>
+                    <span class="small" style="color: var(--ink-soft);">Remotas: Q@(totalCarniceriaRemoto.ToString("N2"))</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-md-6">
+            <div class="app-card p-4 text-center h-100">
+                <div style="font-size: 0.85rem; color: var(--ink-soft); font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em;">
+                    Antojitos
+                </div>
+                <div style="font-size: 2rem; font-weight: 700; color: var(--sage); font-family: var(--font-display);">
+                    Q@(totalAntojitosDia.ToString("N2"))
+                </div>
+                <div class="d-flex justify-content-center gap-3 mt-1 flex-wrap">
+                    <span class="small" style="color: var(--ink-soft);">Presencial: Q@(totalAntojitosPresencial.ToString("N2"))</span>
+                    <span class="small" style="color: var(--ink-soft);">Remotas: Q@(totalAntojitosRemoto.ToString("N2"))</span>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -75,7 +160,6 @@
     </ul>
 
     <div class="tab-content">
-        <!-- ===== MOSTRADOR ===== -->
         <div class="tab-pane fade show active" id="panelMostrador" role="tabpanel">
             @if (!ventasPresenciales.Any())
             {
@@ -89,6 +173,7 @@
                             <thead>
                                 <tr>
                                     <th>Creador</th>
+                                    <th>Negocio</th>
                                     <th>Fecha</th>
                                     <th>Total</th>
                                 </tr>
@@ -98,6 +183,16 @@
                                 {
                                     <tr>
                                         <td>@(nombresCreadores.ContainsKey(venta.UsuarioCreadorId) ? nombresCreadores[venta.UsuarioCreadorId] : "Desconocido")</td>
+                                        <td>
+                                            @if (venta.Negocio == carniceriaApp.Models.TipoNegocio.Antojitos)
+                                            {
+                                                <span class="badge-status-active">Antojitos</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge-category">Carnicería</span>
+                                            }
+                                        </td>
                                         <td>@venta.FechaCreacion.ToString("dd/MM/yyyy")</td>
                                         <td class="fw-bold" style="color: var(--sage);">Q@(venta.Total.ToString("N2"))</td>
                                     </tr>
@@ -115,6 +210,16 @@
                                 <span class="mobile-item-card__title">@(nombresCreadores.ContainsKey(venta.UsuarioCreadorId) ? nombresCreadores[venta.UsuarioCreadorId] : "Desconocido")</span>
                                 <span class="mobile-item-card__price">Q@(venta.Total.ToString("N2"))</span>
                             </div>
+                            <p class="mb-1">
+                                @if (venta.Negocio == carniceriaApp.Models.TipoNegocio.Antojitos)
+                                {
+                                    <span class="badge-status-active">Antojitos</span>
+                                }
+                                else
+                                {
+                                    <span class="badge-category">Carnicería</span>
+                                }
+                            </p>
                             <p class="mb-0 small" style="color: var(--ink-soft);">@venta.FechaCreacion.ToString("dd/MM/yyyy")</p>
                         </div>
                     }
@@ -122,7 +227,6 @@
             }
         </div>
 
-        <!-- ===== REMOTAS ===== -->
         <div class="tab-pane fade" id="panelRemotas" role="tabpanel">
             @if (!ventasRemotas.Any())
             {
@@ -139,6 +243,7 @@
                                     <th>Cliente</th>
                                     <th>Dirección</th>
                                     <th>Detalle</th>
+                                    <th>Negocio</th>
                                     <th>Entregado</th>
                                     <th>Total</th>
                                 </tr>
@@ -171,6 +276,16 @@
                                                 <span class="text-muted small">Sin detalle</span>
                                             }
                                         </td>
+                                        <td>
+                                            @if (remotaTieneCarniceria(venta))
+                                            {
+                                                <span class="badge-category">Carnicería</span>
+                                            }
+                                            @if (remotaTieneAntojitos(venta))
+                                            {
+                                                <span class="badge-status-active">Antojitos</span>
+                                            }
+                                        </td>
                                         <td>@venta.FechaEntrega?.ToString("dd/MM/yyyy")</td>
                                         <td class="fw-bold" style="color: var(--sage);">Q@(venta.Total.ToString("N2"))</td>
                                     </tr>
@@ -188,6 +303,16 @@
                                 <span class="mobile-item-card__title">@(venta.Cliente?.Nombre ?? "Cliente sin nombre")</span>
                                 <span class="mobile-item-card__price">Q@(venta.Total.ToString("N2"))</span>
                             </div>
+                            <p class="mb-1">
+                                @if (remotaTieneCarniceria(venta))
+                                {
+                                    <span class="badge-category">Carnicería</span>
+                                }
+                                @if (remotaTieneAntojitos(venta))
+                                {
+                                    <span class="badge-status-active">Antojitos</span>
+                                }
+                            </p>
                             <p class="mb-1 small" style="color: var(--ink-soft);">@(venta.Cliente?.Direccion ?? "—")</p>
                             <p class="mb-1 small">Creó: @(nombresCreadores.ContainsKey(venta.UsuarioCreadorId) ? nombresCreadores[venta.UsuarioCreadorId] : "Desconocido")</p>
 

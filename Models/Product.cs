@@ -8,7 +8,8 @@ public enum CategoriaProducto
     Cerdo,
     Pollo,
     Embutidos,
-    Menudos
+    Menudos,
+    Antojitos
 }
 
 public class Producto

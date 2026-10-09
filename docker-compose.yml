@@ -8,7 +8,9 @@ services:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://+:8080
       - TZ=America/Guatemala
-      - ConnectionStrings__DefaultConnection=server=mysql_db;port=3306;database=carniceria_db;user=root;password=TU_PASSWORD_SEGURO;
+      - ConnectionStrings__DefaultConnection=server=carniceria_mysql;port=3306;database=carniceria_db;user=${MYSQL_APP_USER:?Define MYSQL_APP_USER en .env};password=${MYSQL_APP_PASSWORD:?Define MYSQL_APP_PASSWORD en .env};
+      - AdminInicial__Email=${ADMIN_EMAIL:-}
+      - AdminInicial__Password=${ADMIN_PASSWORD:-}
     depends_on:
       mysql_db:
         condition: service_healthy
@@ -20,16 +22,18 @@ services:
     container_name: carniceria_mysql
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: TU_PASSWORD_SEGURO
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Define MYSQL_ROOT_PASSWORD en .env}
       MYSQL_DATABASE: carniceria_db
+      MYSQL_USER: ${MYSQL_APP_USER:?Define MYSQL_APP_USER en .env}
+      MYSQL_PASSWORD: ${MYSQL_APP_PASSWORD:?Define MYSQL_APP_PASSWORD en .env}
     ports:
-      - "3308:3306"
+      - "127.0.0.1:3308:3306"
     volumes:
       - carniceria_mysql_data:/var/lib/mysql
     networks:
       - carniceria_net
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-pTU_PASSWORD_SEGURO"]
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root -p$$MYSQL_ROOT_PASSWORD"]
       interval: 5s
       timeout: 5s
       retries: 10

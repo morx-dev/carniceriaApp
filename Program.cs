@@ -78,14 +78,17 @@ app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Cuenta}/{action=Login}/{id?}");
 
-// Seed de roles y usuario Administrador inicial
+// Seed de migraciones, roles y usuario Administrador inicial
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
     var context = services.GetRequiredService<ApplicationDbContext>();
+    
+    // Aplica las migraciones automáticamente para crear las tablas en la BD vacía
+    await context.Database.MigrateAsync();
 
+    // Crea los roles y el administrador inicial
     await DbSeeder.SeedRolesYAdminAsync(services);
-    await DbSeeder.SeedProductosAsync(context);
 }
 
 app.Run();

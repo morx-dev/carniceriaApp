@@ -7,6 +7,7 @@ public class CrearVentaViewModel
     public string? TipoVenta { get; set; }
     public decimal? MontoTotalPresencial { get; set; }
     public List<DetalleVentaInputViewModel> Detalles { get; set; } = new();
+    public TipoNegocio NegocioPresencial { get; set; } = TipoNegocio.Carniceria;
 }
 
 public class DetalleVentaInputViewModel

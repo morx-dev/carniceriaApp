@@ -98,6 +98,7 @@ public class VentaService : IVentaService
         {
             ClienteId = null,
             TipoOrigen = TipoOrigen.Presencial,
+            Negocio = modelo.NegocioPresencial,
             EstadoId = 4,
             UsuarioCreadorId = usuarioId,
             Total = modelo.MontoTotalPresencial.Value,
