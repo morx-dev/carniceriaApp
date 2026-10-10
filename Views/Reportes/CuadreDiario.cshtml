@@ -6,10 +6,13 @@
     var resumenCarniceria = ViewBag.ResumenCarniceria as carniceriaApp.Services.Interfaces.ResumenNegocio;
     var resumenAntojitos = ViewBag.ResumenAntojitos as carniceriaApp.Services.Interfaces.ResumenNegocio;
 
+    var diasCarniceria = ViewBag.DiasPendientesCarniceria as List<DateTime> ?? new();
+    var diasAntojitos = ViewBag.DiasPendientesAntojitos as List<DateTime> ?? new();
+
     var negocios = new[]
     {
-        new { Nombre = "Carnicería", Valor = "Carniceria", Cuadre = cuadreCarniceria, Resumen = resumenCarniceria },
-        new { Nombre = "Antojitos",  Valor = "Antojitos",  Cuadre = cuadreAntojitos,  Resumen = resumenAntojitos }
+        new { Nombre = "Carnicería", Valor = "Carniceria", Cuadre = cuadreCarniceria, Resumen = resumenCarniceria, DiasPendientes = diasCarniceria },
+        new { Nombre = "Antojitos",  Valor = "Antojitos",  Cuadre = cuadreAntojitos,  Resumen = resumenAntojitos, DiasPendientes = diasAntojitos }
     };
 }
 
@@ -34,6 +37,22 @@
     {
         <div class="app-card p-4 mb-4">
             <h5 class="mb-3" style="color: var(--ink); font-weight: 700;">@n.Nombre</h5>
+
+            @if (n.DiasPendientes.Any())
+            {
+                <div class="alert alert-warning mb-3">
+                    <i class="bi bi-exclamation-triangle-fill"></i> <strong>¡Atención!</strong> Hay días anteriores sin cerrar para @n.Nombre:
+                    <ul class="mb-0 mt-1">
+                        @foreach (var fechaPendiente in n.DiasPendientes)
+                        {
+                            <li>
+                                Fecha: @fechaPendiente.ToString("dd/MM/yyyy") — 
+                                <a asp-action="Historial" asp-route-fecha="@fechaPendiente.ToString("yyyy-MM-dd")" class="alert-link">Ir a cerrar o revisar este día</a>
+                            </li>
+                        }
+                    </ul>
+                </div>
+            }
 
             @if (n.Cuadre != null)
             {

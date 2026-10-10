@@ -94,6 +94,11 @@ public class VentaService : IVentaService
             return new ResultadoOperacion { Exitoso = false, MensajeError = "Ingresa un monto válido." };
         }
 
+        if (!Enum.IsDefined(typeof(TipoNegocio), modelo.NegocioPresencial))
+        {
+            return new ResultadoOperacion { Exitoso = false, MensajeError = "El negocio seleccionado no es válido." };
+        }
+
         var venta = new Venta
         {
             ClienteId = null,
@@ -119,10 +124,18 @@ public class VentaService : IVentaService
             return new ResultadoOperacion { Exitoso = false, MensajeError = "Debes seleccionar un cliente." };
         }
 
+        // Una venta remota solo puede venir de WhatsApp o de una llamada
+        var origen = modelo.TipoOrigenSeleccionado ?? TipoOrigen.WhatsApp;
+        if (origen != TipoOrigen.WhatsApp && origen != TipoOrigen.Llamada)
+        {
+            return new ResultadoOperacion { Exitoso = false, MensajeError = "El origen del pedido no es válido." };
+        }
+
         var venta = new Venta
         {
             ClienteId = modelo.ClienteId,
-            TipoOrigen = modelo.TipoOrigenSeleccionado ?? TipoOrigen.WhatsApp,
+            TipoOrigen = origen,
+            Negocio = null,
             EstadoId = 1,
             UsuarioCreadorId = usuarioId,
             FechaCreacion = DateTime.Now
@@ -148,7 +161,15 @@ public class VentaService : IVentaService
         if (!resultado.Exitoso) return resultado;
 
         venta.FueEditado = true;
-        await _context.SaveChangesAsync();
+
+        try
+        {
+            await _context.SaveChangesAsync();
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            return new ResultadoOperacion { Exitoso = false, MensajeError = "Este pedido fue modificado o procesado por otro usuario reciéntemente. Por favor, recarga la página." };
+        }
 
         return new ResultadoOperacion { Exitoso = true };
     }
@@ -163,14 +184,22 @@ public class VentaService : IVentaService
 
         if (venta.EstadoId != 1)
         {
-            return new ResultadoOperacion { Exitoso = false, MensajeError = "Este pedido ya fue despachado o no está pendiente." };
+            return new ResultadoOperacion { Exitoso = false, MensajeError = "Este pedido ya fue despachado o su estado cambió." };
         }
 
         var resultado = await ReemplazarDetallesAsync(venta, detalles);
         if (!resultado.Exitoso) return resultado;
 
         venta.EstadoId = 2;
-        await _context.SaveChangesAsync();
+
+        try
+        {
+            await _context.SaveChangesAsync();
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            return new ResultadoOperacion { Exitoso = false, MensajeError = "Conflicto de concurrencia: este pedido ya fue modificado por otro usuario." };
+        }
 
         return new ResultadoOperacion { Exitoso = true };
     }
@@ -185,18 +214,25 @@ public class VentaService : IVentaService
 
         if (venta.EstadoId != 2)
         {
-            return new ResultadoOperacion { Exitoso = false, MensajeError = "Este pedido debe despacharse (ajustar el peso real) antes de asignar un repartidor." };
+            return new ResultadoOperacion { Exitoso = false, MensajeError = "Este pedido debe despacharse antes de asignar un repartidor o su estado cambió." };
         }
 
         venta.RepartidorId = repartidorId;
         venta.EstadoId = 3;
 
-        await _context.SaveChangesAsync();
+        try
+        {
+            await _context.SaveChangesAsync();
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            return new ResultadoOperacion { Exitoso = false, MensajeError = "Conflicto de concurrencia: este pedido ya fue asignado o modificado por otro usuario." };
+        }
 
         return new ResultadoOperacion { Exitoso = true };
     }
 
-        public async Task<ResultadoOperacion> MarcarEntregadoAsync(int ventaId, string repartidorId, FormaPago formaPago, string? detalleFormaPago)
+    public async Task<ResultadoOperacion> MarcarEntregadoAsync(int ventaId, string repartidorId, FormaPago formaPago, string? detalleFormaPago)
     {
         var venta = await _context.Ventas.FindAsync(ventaId);
         if (venta == null)
@@ -211,7 +247,12 @@ public class VentaService : IVentaService
 
         if (venta.EstadoId != 3)
         {
-            return new ResultadoOperacion { Exitoso = false, MensajeError = "Este pedido no está en camino." };
+            return new ResultadoOperacion { Exitoso = false, MensajeError = "Este pedido ya no está en camino o su estado cambió." };
+        }
+
+        if (!Enum.IsDefined(typeof(FormaPago), formaPago))
+        {
+            return new ResultadoOperacion { Exitoso = false, MensajeError = "La forma de pago no es válida." };
         }
 
         if (formaPago == FormaPago.Otro && string.IsNullOrWhiteSpace(detalleFormaPago))
@@ -226,7 +267,14 @@ public class VentaService : IVentaService
             ? detalleFormaPago.Trim()
             : null;
 
-        await _context.SaveChangesAsync();
+        try
+        {
+            await _context.SaveChangesAsync();
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            return new ResultadoOperacion { Exitoso = false, MensajeError = "Conflicto de concurrencia: este pedido ya fue entregado o modificado por otro usuario." };
+        }
 
         return new ResultadoOperacion { Exitoso = true };
     }
@@ -250,43 +298,70 @@ public class VentaService : IVentaService
         }
 
         venta.EstadoId = 5;
-        await _context.SaveChangesAsync();
+
+        try
+        {
+            await _context.SaveChangesAsync();
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            return new ResultadoOperacion { Exitoso = false, MensajeError = "Conflicto de concurrencia: el estado de este pedido cambió mientras intentabas cancelarlo." };
+        }
 
         return new ResultadoOperacion { Exitoso = true };
     }
 
     private async Task<ResultadoOperacion> ReemplazarDetallesAsync(Venta venta, List<DetalleVentaInputViewModel> detalles)
     {
+        if (detalles == null || !detalles.Any(d => d.Cantidad > 0))
+        {
+            return new ResultadoOperacion { Exitoso = false, MensajeError = "El pedido debe tener al menos un producto." };
+        }
+
+        // Productos que el pedido ya tenía: si se desactivaron después, no deben bloquear la edición ni el despacho
+        var productosYaEnPedido = venta.Detalles.Select(d => d.ProductoId).ToHashSet();
+
+        var nuevosDetalles = new List<DetalleVenta>();
+        decimal total = 0;
+
+        foreach (var item in detalles.Where(d => d.Cantidad > 0))
+        {
+            var producto = await _context.Productos.FindAsync(item.ProductoId);
+
+            if (producto == null)
+            {
+                return new ResultadoOperacion { Exitoso = false, MensajeError = "Uno de los productos seleccionados ya no existe en el sistema." };
+            }
+            if (!producto.Activo && !productosYaEnPedido.Contains(producto.Id))
+            {
+                return new ResultadoOperacion { Exitoso = false, MensajeError = $"El producto '{producto.Nombre}' está inactivo y no se puede agregar." };
+            }
+            if (producto.PrecioActual == null)
+            {
+                return new ResultadoOperacion { Exitoso = false, MensajeError = $"El producto '{producto.Nombre}' no tiene un precio asignado." };
+            }
+
+            var subtotal = producto.PrecioActual.Value * item.Cantidad;
+
+            nuevosDetalles.Add(new DetalleVenta
+            {
+                ProductoId = producto.Id,
+                Cantidad = item.Cantidad,
+                PrecioUnitario = producto.PrecioActual.Value,
+                Subtotal = subtotal,
+                Observaciones = string.IsNullOrWhiteSpace(item.Observacion) ? null : item.Observacion.Trim(),
+                EsAntojito = producto.Categoria == CategoriaProducto.Antojitos
+            });
+
+            total += subtotal;
+        }
+
         _context.DetalleVentas.RemoveRange(venta.Detalles);
         venta.Detalles.Clear();
 
-        decimal total = 0;
-
-        if (detalles != null)
+        foreach (var detalle in nuevosDetalles)
         {
-            foreach (var item in detalles.Where(d => d.Cantidad > 0))
-            {
-                var producto = await _context.Productos.FindAsync(item.ProductoId);
-                if (producto == null || producto.PrecioActual == null) continue;
-
-                var subtotal = producto.PrecioActual.Value * item.Cantidad;
-
-                venta.Detalles.Add(new DetalleVenta
-                {
-                    ProductoId = producto.Id,
-                    Cantidad = item.Cantidad,
-                    PrecioUnitario = producto.PrecioActual.Value,
-                    Subtotal = subtotal,
-                    Observaciones = string.IsNullOrWhiteSpace(item.Observacion) ? null : item.Observacion.Trim()
-                });
-
-                total += subtotal;
-            }
-        }
-
-        if (!venta.Detalles.Any())
-        {
-            return new ResultadoOperacion { Exitoso = false, MensajeError = "El pedido debe tener al menos un producto." };
+            venta.Detalles.Add(detalle);
         }
 
         venta.Total = total;
@@ -305,7 +380,10 @@ public class VentaService : IVentaService
         foreach (var item in detalles.Where(d => d.Cantidad > 0))
         {
             var producto = await _context.Productos.FindAsync(item.ProductoId);
-            if (producto == null || !producto.Activo || producto.PrecioActual == null) continue;
+            if (producto == null || !producto.Activo || producto.PrecioActual == null)
+            {
+                return new ResultadoOperacion { Exitoso = false, MensajeError = "Uno de los productos seleccionados no está disponible. Recarga la página e inténtalo de nuevo." };
+            }
 
             var precioUnitario = producto.PrecioActual.Value;
             var subtotal = precioUnitario * item.Cantidad;
@@ -316,15 +394,11 @@ public class VentaService : IVentaService
                 Cantidad = item.Cantidad,
                 PrecioUnitario = precioUnitario,
                 Subtotal = subtotal,
-                Observaciones = string.IsNullOrWhiteSpace(item.Observacion) ? null : item.Observacion.Trim()
+                Observaciones = string.IsNullOrWhiteSpace(item.Observacion) ? null : item.Observacion.Trim(),
+                EsAntojito = producto.Categoria == CategoriaProducto.Antojitos
             });
 
             total += subtotal;
-        }
-
-        if (!venta.Detalles.Any())
-        {
-            return new ResultadoOperacion { Exitoso = false, MensajeError = "Ninguno de los productos seleccionados es válido." };
         }
 
         venta.Total = total;

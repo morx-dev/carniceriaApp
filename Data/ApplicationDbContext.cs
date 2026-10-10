@@ -75,19 +75,6 @@ public class ApplicationDbContext : IdentityDbContext<Usuario>
             .HasIndex(c => new { c.Fecha, c.Negocio })
             .IsUnique();
 
-        // Dentro de OnModelCreating(ModelBuilder builder), añade estas líneas junto a los demás CuadreDiario:
-        builder.Entity<CuadreDiario>()
-            .Property(c => c.TotalAntojitosPresenciales)
-            .HasPrecision(10, 2);
-
-        builder.Entity<CuadreDiario>()
-            .Property(c => c.TotalAntojitosSistema)
-            .HasPrecision(10, 2);
-
-        builder.Entity<CuadreDiario>()
-            .Property(c => c.TotalAntojitosGeneral)
-            .HasPrecision(10, 2);
-
         builder.Entity<Venta>()
             .HasOne(v => v.Cliente)
             .WithMany()
@@ -117,7 +104,7 @@ public class ApplicationDbContext : IdentityDbContext<Usuario>
             new EstadoVenta { Id = 2, Nombre = "En preparacion" },
             new EstadoVenta { Id = 3, Nombre = "En camino" },
             new EstadoVenta { Id = 4, Nombre = "Entregado" },
-            new EstadoVenta { Id = 5, Nombre = "Cancelado" } //rechazado
+            new EstadoVenta { Id = 5, Nombre = "Cancelado" }
         );
     }
 }

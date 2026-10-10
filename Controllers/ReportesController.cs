@@ -28,6 +28,10 @@ public class ReportesController : Controller
         ViewBag.CuadreCarniceria = cuadreCarniceria;
         ViewBag.CuadreAntojitos = cuadreAntojitos;
 
+        // Detectar días pasados sin cerrar
+        ViewBag.DiasPendientesCarniceria = await _reporteService.ObtenerDiasPendientesDeCierreAsync(TipoNegocio.Carniceria);
+        ViewBag.DiasPendientesAntojitos = await _reporteService.ObtenerDiasPendientesDeCierreAsync(TipoNegocio.Antojitos);
+
         if (cuadreCarniceria == null)
             ViewBag.ResumenCarniceria = await _reporteService.CalcularResumenDelDiaAsync(hoy, TipoNegocio.Carniceria);
 
@@ -41,6 +45,13 @@ public class ReportesController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> CerrarDia(TipoNegocio negocio, DateTime? fecha)
     {
+        // VALIDACIÓN ESTRICTA: Evita valores de enum inválidos (ej. un número aleatorio como 7)
+        if (!Enum.IsDefined(typeof(TipoNegocio), negocio))
+        {
+            TempData["Error"] = "El tipo de negocio especificado no es válido.";
+            return RedirectToAction(nameof(CuadreDiario));
+        }
+
         var usuarioId = _userManager.GetUserId(User) ?? string.Empty;
         var resultado = await _reporteService.CerrarDiaAsync(usuarioId, negocio, fecha);
 
@@ -49,7 +60,6 @@ public class ReportesController : Controller
         TempData[resultado.Exitoso ? "Mensaje" : "Error"] =
             resultado.Exitoso ? $"El día se cerró correctamente para {nombre}." : resultado.MensajeError;
 
-        // Si se cerró un día pasado, se vuelve al historial de esa fecha
         if (fecha.HasValue && fecha.Value.Date < DateTime.Today)
         {
             return RedirectToAction(nameof(Historial), new { fecha = fecha.Value.ToString("yyyy-MM-dd") });
@@ -77,10 +87,20 @@ public class ReportesController : Controller
         ViewBag.FechaSeleccionada = fechaSeleccionada;
         ViewBag.NombresCreadores = nombresCreadores;
 
-        ViewBag.CuadreCarniceria = await _reporteService.ObtenerCuadrePorFechaAsync(fechaSeleccionada, TipoNegocio.Carniceria);
-        ViewBag.CuadreAntojitos = await _reporteService.ObtenerCuadrePorFechaAsync(fechaSeleccionada, TipoNegocio.Antojitos);
-        ViewBag.ResumenCarniceria = await _reporteService.CalcularResumenDelDiaAsync(fechaSeleccionada, TipoNegocio.Carniceria);
-        ViewBag.ResumenAntojitos = await _reporteService.CalcularResumenDelDiaAsync(fechaSeleccionada, TipoNegocio.Antojitos);
+        var cuadreCarniceria = await _reporteService.ObtenerCuadrePorFechaAsync(fechaSeleccionada, TipoNegocio.Carniceria);
+        var cuadreAntojitos = await _reporteService.ObtenerCuadrePorFechaAsync(fechaSeleccionada, TipoNegocio.Antojitos);
+
+        ViewBag.CuadreCarniceria = cuadreCarniceria;
+        ViewBag.CuadreAntojitos = cuadreAntojitos;
+
+        // Si el día ya está cerrado, usamos los valores inmutables guardados en el cuadre
+        ViewBag.ResumenCarniceria = cuadreCarniceria != null
+            ? new ResumenNegocio { Presencial = cuadreCarniceria.TotalVentasPresenciales, Remoto = cuadreCarniceria.TotalVentasSistema }
+            : await _reporteService.CalcularResumenDelDiaAsync(fechaSeleccionada, TipoNegocio.Carniceria);
+
+        ViewBag.ResumenAntojitos = cuadreAntojitos != null
+            ? new ResumenNegocio { Presencial = cuadreAntojitos.TotalVentasPresenciales, Remoto = cuadreAntojitos.TotalVentasSistema }
+            : await _reporteService.CalcularResumenDelDiaAsync(fechaSeleccionada, TipoNegocio.Antojitos);
 
         return View(ventas);
     }

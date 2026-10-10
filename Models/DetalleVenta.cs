@@ -14,4 +14,7 @@ public class DetalleVenta
     public decimal Subtotal { get; set; }
 
     public string? Observaciones { get; set; }
+
+    // HISTÓRICO INMUTABLE: Guarda si este producto era Antojito al momento de la venta
+    public bool EsAntojito { get; set; }
 }

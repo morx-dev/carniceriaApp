@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace carniceriaApp.Models;
 
 public enum TipoOrigen { Presencial, WhatsApp, Llamada }
@@ -29,5 +31,11 @@ public class Venta
     public DateTime? FechaEntrega { get; set; }
 
     public List<DetalleVenta> Detalles { get; set; } = new();
-    public TipoNegocio Negocio { get; set; } = TipoNegocio.Carniceria;
+    
+    // CAMBIO: Ahora es anulable para que las remotas no lleven un negocio falso
+    public TipoNegocio? Negocio { get; set; }
+
+    // Token para control de concurrencia optimista (evita que dos usuarios pisen el mismo pedido)
+    [Timestamp]
+    public byte[]? RowVersion { get; set; }
 }

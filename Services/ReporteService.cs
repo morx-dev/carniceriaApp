@@ -9,7 +9,6 @@ public class ReporteService : IReporteService
 {
     private readonly ApplicationDbContext _context;
 
-    // Valor "nunca": se usa cuando un día todavía no tiene cuadre cerrado (no hay hora de corte)
     private static readonly DateTime SinCorte = new DateTime(9000, 1, 1);
 
     public ReporteService(ApplicationDbContext context)
@@ -19,12 +18,13 @@ public class ReporteService : IReporteService
 
     public async Task<CuadreDiario?> ObtenerCuadrePorFechaAsync(DateTime fecha, TipoNegocio negocio)
     {
+        if (!Enum.IsDefined(typeof(TipoNegocio), negocio)) return null;
+
         var fechaSolo = fecha.Date;
         return await _context.CuadresDiarios
             .FirstOrDefaultAsync(c => c.Fecha == fechaSolo && c.Negocio == negocio);
     }
 
-    // Hora de corte del día pedido y del día anterior, SOLO del negocio indicado
     private async Task<(DateTime CorteDia, DateTime CorteAnterior)> ObtenerCortesAsync(DateTime fechaSolo, TipoNegocio negocio)
     {
         var anterior = fechaSolo.AddDays(-1);
@@ -39,7 +39,6 @@ public class ReporteService : IReporteService
         return (corteDia, corteAnterior);
     }
 
-    // Mostrador del día para un negocio: lo creado ese día ANTES del cierre + lo del día anterior DESPUÉS de su cierre
     private IQueryable<Venta> VentasPresencialesDelDia(DateTime dia, TipoNegocio negocio, DateTime corteDia, DateTime corteAnterior)
     {
         var anterior = dia.AddDays(-1);
@@ -53,7 +52,6 @@ public class ReporteService : IReporteService
             ));
     }
 
-    // Remotas del día (según el corte del negocio): lo entregado ese día ANTES del cierre + lo del día anterior DESPUÉS de su cierre
     private IQueryable<Venta> VentasRemotasEntregadasDelDia(DateTime dia, DateTime corteDia, DateTime corteAnterior)
     {
         var anterior = dia.AddDays(-1);
@@ -69,12 +67,11 @@ public class ReporteService : IReporteService
     }
 
     private static bool EsLineaAntojitos(DetalleVenta d) =>
-        d.Producto != null && d.Producto.Categoria == CategoriaProducto.Antojitos;
+        d.EsAntojito;
 
     private static bool LineaPerteneceANegocio(DetalleVenta d, TipoNegocio negocio) =>
         negocio == TipoNegocio.Antojitos ? EsLineaAntojitos(d) : !EsLineaAntojitos(d);
 
-    // Ventas del día de UN negocio (con el corte de ese negocio)
     private async Task<(List<Venta> Presenciales, List<Venta> Remotas)> CargarVentasDelNegocioAsync(DateTime fechaSolo, TipoNegocio negocio)
     {
         var (corteDia, corteAnterior) = await ObtenerCortesAsync(fechaSolo, negocio);
@@ -89,7 +86,6 @@ public class ReporteService : IReporteService
             .Include(v => v.Detalles).ThenInclude(d => d.Producto)
             .ToListAsync();
 
-        // Solo las remotas que tienen al menos una línea de ESTE negocio
         var remotas = remotasCandidatas
             .Where(v => v.Detalles != null && v.Detalles.Any(d => LineaPerteneceANegocio(d, negocio)))
             .ToList();
@@ -99,7 +95,23 @@ public class ReporteService : IReporteService
 
     public async Task<ResumenNegocio> CalcularResumenDelDiaAsync(DateTime fecha, TipoNegocio negocio)
     {
+        if (!Enum.IsDefined(typeof(TipoNegocio), negocio))
+        {
+            return new ResumenNegocio { Presencial = 0, Remoto = 0 };
+        }
+
         var fechaSolo = fecha.Date;
+
+        var cuadreExistente = await ObtenerCuadrePorFechaAsync(fechaSolo, negocio);
+        if (cuadreExistente != null)
+        {
+            return new ResumenNegocio
+            {
+                Presencial = cuadreExistente.TotalVentasPresenciales,
+                Remoto = cuadreExistente.TotalVentasSistema
+            };
+        }
+
         var (presenciales, remotas) = await CargarVentasDelNegocioAsync(fechaSolo, negocio);
 
         return new ResumenNegocio
@@ -119,7 +131,6 @@ public class ReporteService : IReporteService
             .ToListAsync();
     }
 
-    // Todas las ventas que entran al día en cualquiera de los dos negocios (sin duplicados)
     public async Task<List<Venta>> ObtenerVentasDelDiaAsync(DateTime fecha)
     {
         var fechaSolo = fecha.Date;
@@ -133,8 +144,52 @@ public class ReporteService : IReporteService
         return presenciales.Concat(remotas).ToList();
     }
 
-        public async Task<ResultadoOperacion> CerrarDiaAsync(string usuarioId, TipoNegocio negocio, DateTime? fecha = null)
+    public async Task<List<DateTime>> ObtenerDiasPendientesDeCierreAsync(TipoNegocio negocio)
     {
+        if (!Enum.IsDefined(typeof(TipoNegocio), negocio)) return new List<DateTime>();
+
+        var ayer = DateTime.Today.AddDays(-1);
+        var desde = DateTime.Today.AddDays(-60);
+        var esAntojitos = negocio == TipoNegocio.Antojitos;
+
+        var fechasConVentasPresenciales = await _context.Ventas
+            .Where(v => v.TipoOrigen == TipoOrigen.Presencial
+                     && v.Negocio == negocio
+                     && v.FechaCreacion.Date <= ayer
+                     && v.FechaCreacion.Date >= desde)
+            .Select(v => v.FechaCreacion.Date)
+            .Distinct()
+            .ToListAsync();
+
+        // Solo cuentan las remotas que tienen al menos una línea de ESTE negocio
+        var fechasConVentasRemotas = await _context.Ventas
+            .Where(v => v.TipoOrigen != TipoOrigen.Presencial
+                     && v.EstadoId == 4
+                     && v.FechaEntrega.HasValue
+                     && v.FechaEntrega.Value.Date <= ayer
+                     && v.FechaEntrega.Value.Date >= desde
+                     && v.Detalles.Any(d => d.EsAntojito == esAntojitos))
+            .Select(v => v.FechaEntrega!.Value.Date)
+            .Distinct()
+            .ToListAsync();
+
+        var todasLasFechas = fechasConVentasPresenciales.Union(fechasConVentasRemotas).OrderBy(f => f).ToList();
+
+        var fechasCerradas = await _context.CuadresDiarios
+            .Where(c => c.Negocio == negocio && c.Fecha <= ayer)
+            .Select(c => c.Fecha)
+            .ToListAsync();
+
+        return todasLasFechas.Except(fechasCerradas).ToList();
+    }
+
+    public async Task<ResultadoOperacion> CerrarDiaAsync(string usuarioId, TipoNegocio negocio, DateTime? fecha = null)
+    {
+        if (!Enum.IsDefined(typeof(TipoNegocio), negocio))
+        {
+            return new ResultadoOperacion { Exitoso = false, MensajeError = "El tipo de negocio proporcionado no es válido." };
+        }
+
         var dia = (fecha ?? DateTime.Today).Date;
         var nombreNegocio = negocio == TipoNegocio.Antojitos ? "Antojitos" : "Carnicería";
 
@@ -161,8 +216,8 @@ public class ReporteService : IReporteService
             TotalVentasPresenciales = resumen.Presencial,
             TotalVentasSistema = resumen.Remoto,
             TotalGeneral = resumen.Total,
-            // Día pasado: el corte es el final de ese día. Día de hoy: la hora actual.
-            FechaCreacion = esDiaPasado ? dia.AddDays(1).AddSeconds(-1) : DateTime.Now
+            // Día pasado: 23:59:59.999999 (MySQL guarda hasta microsegundos, por eso -10 ticks)
+            FechaCreacion = esDiaPasado ? dia.AddDays(1).AddTicks(-10) : DateTime.Now
         };
 
         _context.CuadresDiarios.Add(cuadre);
@@ -173,7 +228,6 @@ public class ReporteService : IReporteService
         }
         catch (DbUpdateException)
         {
-            // Protección por si dos clics simultáneos intentan cerrar el mismo día
             return new ResultadoOperacion { Exitoso = false, MensajeError = $"Ese día ya fue cerrado para {nombreNegocio}." };
         }
 

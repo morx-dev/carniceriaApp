@@ -21,13 +21,20 @@
 
     // Ayudantes para saber a qué negocio pertenece una venta remota (según las categorías de sus líneas)
     Func<carniceriaApp.Models.DetalleVenta, bool> esLineaAntojitos = d =>
-        d.Producto != null && d.Producto.Categoria == carniceriaApp.Models.CategoriaProducto.Antojitos;
+        d.EsAntojito; // Usando el campo histórico inmutable
 
     Func<carniceriaApp.Models.Venta, bool> remotaTieneAntojitos = v =>
         v.Detalles != null && v.Detalles.Any(d => esLineaAntojitos(d));
 
     Func<carniceriaApp.Models.Venta, bool> remotaTieneCarniceria = v =>
         v.Detalles == null || !v.Detalles.Any() || v.Detalles.Any(d => !esLineaAntojitos(d));
+
+    // Funciones para calcular el total específico por negocio en ventas remotas mixtas
+    Func<carniceriaApp.Models.Venta, decimal> totalRemotoCarniceria = v =>
+        v.Detalles?.Where(d => !esLineaAntojitos(d)).Sum(d => d.Subtotal) ?? v.Total;
+
+    Func<carniceriaApp.Models.Venta, decimal> totalRemotoAntojitos = v =>
+        v.Detalles?.Where(d => esLineaAntojitos(d)).Sum(d => d.Subtotal) ?? 0;
 
     // ===== CARNICERÍA (calculado por el servicio con su propio corte) =====
     var totalCarniceriaPresencial = resumenCarniceria.Presencial;
@@ -245,12 +252,13 @@
                                     <th>Detalle</th>
                                     <th>Negocio</th>
                                     <th>Entregado</th>
-                                    <th>Total</th>
+                                    <th>Total del Pedido / Aporte</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @foreach (var venta in ventasRemotas)
                                 {
+                                    var esMixta = remotaTieneCarniceria(venta) && remotaTieneAntojitos(venta);
                                     <tr>
                                         <td>@(nombresCreadores.ContainsKey(venta.UsuarioCreadorId) ? nombresCreadores[venta.UsuarioCreadorId] : "Desconocido")</td>
                                         <td>@(venta.Cliente?.Nombre ?? "—")</td>
@@ -279,15 +287,23 @@
                                         <td>
                                             @if (remotaTieneCarniceria(venta))
                                             {
-                                                <span class="badge-category">Carnicería</span>
+                                                <span class="badge-category">Carnicería (Q@(totalRemotoCarniceria(venta).ToString("N2")))</span>
                                             }
                                             @if (remotaTieneAntojitos(venta))
                                             {
-                                                <span class="badge-status-active">Antojitos</span>
+                                                <span class="badge-status-active">Antojitos (Q@(totalRemotoAntojitos(venta).ToString("N2")))</span>
                                             }
                                         </td>
                                         <td>@venta.FechaEntrega?.ToString("dd/MM/yyyy")</td>
-                                        <td class="fw-bold" style="color: var(--sage);">Q@(venta.Total.ToString("N2"))</td>
+                                        <td class="fw-bold" style="color: var(--sage);">
+                                            Q@(venta.Total.ToString("N2"))
+                                            @if (esMixta)
+                                            {
+                                                <div class="small text-muted fw-normal" style="font-size: 0.75rem;">
+                                                    Mixto (Carnes: Q@(totalRemotoCarniceria(venta).ToString("N2")) | Antojitos: Q@(totalRemotoAntojitos(venta).ToString("N2")))
+                                                </div>
+                                            }
+                                        </td>
                                     </tr>
                                 }
                             </tbody>
@@ -298,6 +314,7 @@
                 <div class="mobile-card-list d-md-none">
                     @foreach (var venta in ventasRemotas)
                     {
+                        var esMixta = remotaTieneCarniceria(venta) && remotaTieneAntojitos(venta);
                         <div class="mobile-item-card">
                             <div class="mobile-item-card__header">
                                 <span class="mobile-item-card__title">@(venta.Cliente?.Nombre ?? "Cliente sin nombre")</span>
@@ -306,13 +323,19 @@
                             <p class="mb-1">
                                 @if (remotaTieneCarniceria(venta))
                                 {
-                                    <span class="badge-category">Carnicería</span>
+                                    <span class="badge-category">Carnicería (Q@(totalRemotoCarniceria(venta).ToString("N2")))</span>
                                 }
                                 @if (remotaTieneAntojitos(venta))
                                 {
-                                    <span class="badge-status-active">Antojitos</span>
+                                    <span class="badge-status-active">Antojitos (Q@(totalRemotoAntojitos(venta).ToString("N2")))</span>
                                 }
                             </p>
+                            @if (esMixta)
+                            {
+                                <p class="mb-1 small text-muted">
+                                    Desglose: Carnes Q@(totalRemotoCarniceria(venta).ToString("N2")) | Antojitos Q@(totalRemotoAntojitos(venta).ToString("N2"))
+                                </p>
+                            }
                             <p class="mb-1 small" style="color: var(--ink-soft);">@(venta.Cliente?.Direccion ?? "—")</p>
                             <p class="mb-1 small">Creó: @(nombresCreadores.ContainsKey(venta.UsuarioCreadorId) ? nombresCreadores[venta.UsuarioCreadorId] : "Desconocido")</p>
 
