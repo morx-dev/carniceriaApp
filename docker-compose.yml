@@ -8,7 +8,7 @@ services:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://+:8080
       - TZ=America/Guatemala
-      - ConnectionStrings__DefaultConnection=server=carniceria_mysql;port=3306;database=carniceria_db;user=${MYSQL_APP_USER:?Define MYSQL_APP_USER en .env};password=${MYSQL_APP_PASSWORD:?Define MYSQL_APP_PASSWORD en .env};
+      - ConnectionStrings__DefaultConnection=server=mysql_db;port=3306;database=carniceria_db;user=${MYSQL_APP_USER:?Define MYSQL_APP_USER en .env};password=${MYSQL_APP_PASSWORD:?Define MYSQL_APP_PASSWORD en .env};
       - AdminInicial__Email=${ADMIN_EMAIL:-}
       - AdminInicial__Password=${ADMIN_PASSWORD:-}
     depends_on:
