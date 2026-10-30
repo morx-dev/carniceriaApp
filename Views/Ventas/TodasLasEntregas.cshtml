@@ -1,6 +1,8 @@
 @model List<carniceriaApp.Models.Venta>
 @{
     ViewData["Title"] = "Entregas";
+    var fechaActual = ViewBag.FechaActual as DateTime?;
+    bool todasLasFechas = ViewBag.TodasLasFechas == true;
 }
 
 <div class="container app-page">
@@ -11,10 +13,28 @@
         </button>
     </div>
 
-    <div class="search-toolbar">
+    <div class="search-toolbar d-flex flex-wrap gap-2 align-items-center">
         <input type="text" id="inputBusqueda" class="form-control" style="max-width: 360px;"
                placeholder="Buscar por dirección..." value="@ViewBag.BusquedaActual" autocomplete="off" autofocus />
+
+        <input type="date" id="inputFecha" class="form-control" style="max-width: 200px;"
+               value="@(fechaActual?.ToString("yyyy-MM-dd"))" />
+
+        <button type="button" id="btnHoy" class="btn-outline-brand">Hoy</button>
+        <button type="button" id="btnTodas" class="@(todasLasFechas ? "btn-brand" : "btn-outline-brand")">Ver todas</button>
     </div>
+
+    <p class="small mb-3" style="color: var(--ink-soft);">
+        <i class="bi bi-calendar3"></i>
+        @if (todasLasFechas)
+        {
+            <span>Mostrando entregas de todas las fechas.</span>
+        }
+        else if (fechaActual.HasValue)
+        {
+            <span>Mostrando entregas del @fechaActual.Value.ToString("dd/MM/yyyy")@(fechaActual.Value.Date == DateTime.Today ? " (incluye los pedidos en camino)" : "").</span>
+        }
+    </p>
 
     <div id="contenedorEntregas">
         <partial name="_ListaEntregas" model="Model" />
@@ -23,13 +43,29 @@
 
 @section Scripts {
     <script>
+        const urlEntregas = '@Url.Action("TodasLasEntregas", "Ventas")';
+        const hoy = '@DateTime.Today.ToString("yyyy-MM-dd")';
+        const verTodas = @(todasLasFechas ? "true" : "false");
+
         const inputBusqueda = document.getElementById('inputBusqueda');
+        const inputFecha = document.getElementById('inputFecha');
         const contenedor = document.getElementById('contenedorEntregas');
         let timeout = null;
 
+        function construirParametros(fecha, todas) {
+            const params = new URLSearchParams();
+            params.set('busqueda', inputBusqueda.value);
+            if (todas) {
+                params.set('todas', 'true');
+            } else if (fecha) {
+                params.set('fecha', fecha);
+            }
+            return params.toString();
+        }
+
+        // Búsqueda en vivo: respeta la fecha (o "todas") que ya está elegida
         function realizarBusqueda() {
-            const busqueda = inputBusqueda.value;
-            const url = `@Url.Action("TodasLasEntregas", "Ventas")?busqueda=${encodeURIComponent(busqueda)}`;
+            const url = `${urlEntregas}?${construirParametros(inputFecha.value, verTodas)}`;
 
             fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
                 .then(response => response.text())
@@ -37,9 +73,26 @@
                 .catch(error => console.error('Error al filtrar:', error));
         }
 
+        // Cambiar de fecha recarga la página para actualizar también el rótulo
+        function irA(fecha, todas) {
+            window.location.href = `${urlEntregas}?${construirParametros(fecha, todas)}`;
+        }
+
         inputBusqueda.addEventListener('input', function () {
             clearTimeout(timeout);
             timeout = setTimeout(realizarBusqueda, 300);
+        });
+
+        inputFecha.addEventListener('change', function () {
+            if (inputFecha.value) irA(inputFecha.value, false);
+        });
+
+        document.getElementById('btnHoy').addEventListener('click', function () {
+            irA(hoy, false);
+        });
+
+        document.getElementById('btnTodas').addEventListener('click', function () {
+            irA('', true);
         });
     </script>
 }

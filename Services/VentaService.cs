@@ -63,7 +63,7 @@ public class VentaService : IVentaService
             .ToListAsync();
     }
 
-    public async Task<List<Venta>> ObtenerEntregasAsync(string? busquedaDireccion)
+    public async Task<List<Venta>> ObtenerEntregasAsync(string? busquedaDireccion, DateTime? fecha = null)
     {
         var query = _context.Ventas
             .Include(v => v.Cliente)
@@ -71,12 +71,32 @@ public class VentaService : IVentaService
             .Where(v => v.EstadoId == 3 || v.EstadoId == 4)
             .AsQueryable();
 
+        if (fecha.HasValue)
+        {
+            var inicio = fecha.Value.Date;
+            var fin = inicio.AddDays(1);
+
+            if (inicio == DateTime.Today)
+            {
+                // Hoy: lo entregado hoy + los pedidos que siguen en camino
+                query = query.Where(v =>
+                    (v.EstadoId == 4 && v.FechaEntrega >= inicio && v.FechaEntrega < fin) ||
+                    v.EstadoId == 3);
+            }
+            else
+            {
+                // Otro día: solo lo que se entregó ese día
+                query = query.Where(v =>
+                    v.EstadoId == 4 && v.FechaEntrega >= inicio && v.FechaEntrega < fin);
+            }
+        }
+
         if (!string.IsNullOrWhiteSpace(busquedaDireccion))
         {
             query = query.Where(v => v.Cliente != null && v.Cliente.Direccion.Contains(busquedaDireccion));
         }
 
-        return await query.OrderByDescending(v => v.FechaCreacion).ToListAsync();
+        return await query.OrderByDescending(v => v.FechaEntrega ?? v.FechaCreacion).ToListAsync();
     }
 
     public async Task<Venta?> ObtenerVentaConDetalleAsync(int id)
