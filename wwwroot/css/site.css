@@ -716,6 +716,11 @@ select.form-control-app {
         max-width: 100% !important;
         width: 100%;
     }
+    .search-toolbar .btn-brand,
+    .search-toolbar .btn-outline-brand {
+        width: 100%;
+        justify-content: center;
+    }
 }
 
 @media (max-width: 480px) {
