@@ -172,9 +172,12 @@ public class VentasController : Controller
     }
 
     [Authorize(Roles = "Administrador,CallCenter,Mostrador")]
-    public async Task<IActionResult> TodasLasEntregas(string? busqueda)
+    public async Task<IActionResult> TodasLasEntregas(string? busqueda, DateTime? fecha, bool todas = false)
     {
-        var ventas = await _ventaService.ObtenerEntregasAsync(busqueda);
+        // Por defecto se muestra el día de hoy; "todas" quita el filtro de fecha
+        DateTime? fechaFiltro = todas ? null : (fecha ?? DateTime.Today).Date;
+
+        var ventas = await _ventaService.ObtenerEntregasAsync(busqueda, fechaFiltro);
 
         var nombresRepartidores = new Dictionary<string, string>();
         var nombresCreadores = new Dictionary<string, string>();
@@ -197,6 +200,8 @@ public class VentasController : Controller
         ViewBag.NombresRepartidores = nombresRepartidores;
         ViewBag.NombresCreadores = nombresCreadores;
         ViewBag.BusquedaActual = busqueda;
+        ViewBag.FechaActual = fechaFiltro;
+        ViewBag.TodasLasFechas = todas;
 
         if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
         {

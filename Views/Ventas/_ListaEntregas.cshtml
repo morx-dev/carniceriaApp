@@ -42,6 +42,11 @@
             <p class="mb-1 small"><strong>Dirección:</strong> @venta.Cliente?.Direccion</p>
             <p class="mb-2 small"><strong>Repartidor:</strong> <span class="badge-category">@nombreRepartidor</span></p>
 
+            @if (venta.EstadoId == 4 && venta.FechaEntrega != null)
+            {
+                <p class="mb-2 small"><strong>Entregado:</strong> @venta.FechaEntrega.Value.ToString("dd/MM/yyyy HH:mm")</p>
+            }
+
             @if (venta.EstadoId == 4 && venta.FormaPago != null)
             {
                 <p class="mb-2 small">

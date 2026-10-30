@@ -10,7 +10,7 @@ public interface IVentaService
     Task<List<Venta>> ObtenerPendientesAsync();
     Task<List<Venta>> ObtenerAsignadasARepartidorAsync(string repartidorId);
     Task<List<Venta>> ObtenerEntregadasPorRepartidorAsync(string repartidorId);
-    Task<List<Venta>> ObtenerEntregasAsync(string? busquedaDireccion);
+    Task<List<Venta>> ObtenerEntregasAsync(string? busquedaDireccion, DateTime? fecha = null);
     Task<Venta?> ObtenerVentaConDetalleAsync(int id);
 
     Task<ResultadoOperacion> CrearVentaPresencialAsync(CrearVentaViewModel modelo, string usuarioId);
