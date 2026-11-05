@@ -147,11 +147,24 @@ public class VentasController : Controller
     }
 
     [Authorize(Roles = "Repartidor")]
-    public async Task<IActionResult> MisEntregas()
+    public async Task<IActionResult> MisEntregas(DateTime? fecha, bool todas = false)
     {
         var usuarioId = _userManager.GetUserId(User) ?? string.Empty;
         var pendientes = await _ventaService.ObtenerAsignadasARepartidorAsync(usuarioId);
         var entregadas = await _ventaService.ObtenerEntregadasPorRepartidorAsync(usuarioId);
+
+        // NUEVO: filtro por día para la pestaña "Entregadas" (por defecto hoy; "todas" quita el filtro)
+        DateTime? fechaFiltro = todas ? null : (fecha ?? DateTime.Today).Date;
+        if (fechaFiltro.HasValue)
+        {
+            entregadas = entregadas
+                .Where(v => v.FechaEntrega.HasValue && v.FechaEntrega.Value.Date == fechaFiltro.Value)
+                .ToList();
+        }
+
+        ViewBag.FechaActual = fechaFiltro;
+        ViewBag.TodasLasFechas = todas;
+        ViewBag.FiltroEntregadasAplicado = fecha.HasValue || todas;
 
         ViewBag.Entregadas = entregadas;
         return View(pendientes);
@@ -209,6 +222,38 @@ public class VentasController : Controller
         }
 
         return View(ventas);
+    }
+
+    // NUEVO: CallCenter ve únicamente las entregas ya realizadas (mismo formato que la pestaña "Entregadas" del repartidor)
+    [Authorize(Roles = "CallCenter")]
+    public async Task<IActionResult> EntregadasCallCenter(DateTime? fecha, bool todas = false)
+    {
+        // Por defecto se muestra el día de hoy; "todas" quita el filtro de fecha
+        DateTime? fechaFiltro = todas ? null : (fecha ?? DateTime.Today).Date;
+
+        var ventas = await _ventaService.ObtenerEntregasAsync(null, fechaFiltro);
+
+        // Solo pedidos remotos ya entregados (excluye mostrador y los que siguen en camino)
+        var entregadas = ventas
+            .Where(v => v.EstadoId == 4 && v.TipoOrigen != TipoOrigen.Presencial)
+            .OrderByDescending(v => v.FechaEntrega)
+            .ToList();
+
+        var nombresRepartidores = new Dictionary<string, string>();
+        foreach (var venta in entregadas)
+        {
+            if (venta.RepartidorId != null && !nombresRepartidores.ContainsKey(venta.RepartidorId))
+            {
+                var repartidor = await _userManager.FindByIdAsync(venta.RepartidorId);
+                nombresRepartidores[venta.RepartidorId] = repartidor?.NombreCompleto ?? "Desconocido";
+            }
+        }
+
+        ViewBag.NombresRepartidores = nombresRepartidores;
+        ViewBag.FechaActual = fechaFiltro;
+        ViewBag.TodasLasFechas = todas;
+
+        return View(entregadas);
     }
 
     private bool EsVentaRemota(CrearVentaViewModel modelo)

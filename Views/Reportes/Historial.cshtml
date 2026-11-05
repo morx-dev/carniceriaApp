@@ -252,6 +252,7 @@
                                     <th>Detalle</th>
                                     <th>Negocio</th>
                                     <th>Entregado</th>
+                                    <th>Forma de pago</th>
                                     <th>Total del Pedido / Aporte</th>
                                 </tr>
                             </thead>
@@ -295,6 +296,20 @@
                                             }
                                         </td>
                                         <td>@venta.FechaEntrega?.ToString("dd/MM/yyyy")</td>
+                                        <td>
+                                            @if (venta.FormaPago != null)
+                                            {
+                                                <span class="badge-category">@venta.FormaPago</span>
+                                                @if (venta.FormaPago == carniceriaApp.Models.FormaPago.Otro && !string.IsNullOrWhiteSpace(venta.DetalleFormaPago))
+                                                {
+                                                    <div class="small" style="color: var(--ink-soft);">@venta.DetalleFormaPago</div>
+                                                }
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted small">No registrada</span>
+                                            }
+                                        </td>
                                         <td class="fw-bold" style="color: var(--sage);">
                                             Q@(venta.Total.ToString("N2"))
                                             @if (esMixta)
@@ -354,6 +369,22 @@
                                     }
                                 </ul>
                             }
+
+                            <p class="mb-1 small">
+                                <strong>Forma de pago:</strong>
+                                @if (venta.FormaPago != null)
+                                {
+                                    <span class="badge-category">@venta.FormaPago</span>
+                                    @if (venta.FormaPago == carniceriaApp.Models.FormaPago.Otro && !string.IsNullOrWhiteSpace(venta.DetalleFormaPago))
+                                    {
+                                        <em style="color: var(--ink-soft);">(@venta.DetalleFormaPago)</em>
+                                    }
+                                }
+                                else
+                                {
+                                    <span class="text-muted">No registrada</span>
+                                }
+                            </p>
 
                             <p class="mb-0 small" style="color: var(--ink-soft);">Entregado: @venta.FechaEntrega?.ToString("dd/MM/yyyy")</p>
                         </div>

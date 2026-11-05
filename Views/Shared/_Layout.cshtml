@@ -52,6 +52,13 @@
                                     </li>
                                 }
 
+                                @if (User.IsInRole("CallCenter"))
+                                {
+                                    <li class="nav-item">
+                                        <a class="nav-link-app" asp-controller="Ventas" asp-action="EntregadasCallCenter"><i class="bi bi-check2-circle"></i> Entregadas</a>
+                                    </li>
+                                }
+
                                 @if (User.IsInRole("Administrador") || User.IsInRole("CallCenter") || User.IsInRole("Mostrador"))
                                 {
                                     <li class="nav-item">

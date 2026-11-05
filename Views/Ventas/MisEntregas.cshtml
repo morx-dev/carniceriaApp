@@ -2,6 +2,9 @@
 @{
     ViewData["Title"] = "Mis entregas";
     var entregadas = (List<carniceriaApp.Models.Venta>)ViewBag.Entregadas;
+    var fechaActual = ViewBag.FechaActual as DateTime?;
+    bool todasLasFechas = ViewBag.TodasLasFechas == true;
+    bool filtroAplicado = ViewBag.FiltroEntregadasAplicado == true;
 }
 
 <div class="container app-page">
@@ -82,9 +85,33 @@
         </div>
 
         <div class="tab-pane fade" id="panelEntregadas" role="tabpanel">
-            @if (!entregadas.Any())
+            <div class="search-toolbar d-flex flex-wrap gap-2 align-items-center">
+                <input type="date" id="inputFechaEntregadas" class="form-control" style="max-width: 200px;"
+                       value="@(fechaActual?.ToString("yyyy-MM-dd"))" />
+
+                <button type="button" id="btnHoyEntregadas" class="btn-outline-brand">Hoy</button>
+                <button type="button" id="btnTodasEntregadas" class="@(todasLasFechas ? "btn-brand" : "btn-outline-brand")">Ver todas</button>
+            </div>
+
+            <p class="small mb-3" style="color: var(--ink-soft);">
+                <i class="bi bi-calendar3"></i>
+                @if (todasLasFechas)
+                {
+                    <span>Mostrando entregas de todas las fechas.</span>
+                }
+                else if (fechaActual.HasValue)
+                {
+                    <span>Mostrando entregas del @fechaActual.Value.ToString("dd/MM/yyyy").</span>
+                }
+            </p>
+
+            @if (!entregadas.Any() && todasLasFechas)
             {
                 <div class="empty-state">Aún no has entregado ningún pedido.</div>
+            }
+            else if (!entregadas.Any())
+            {
+                <div class="empty-state">No tienes pedidos entregados en esta fecha.</div>
             }
             @foreach (var venta in entregadas)
             {
@@ -107,3 +134,33 @@
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        const urlMisEntregas = '@Url.Action("MisEntregas", "Ventas")';
+        const hoyEntregadas = '@DateTime.Today.ToString("yyyy-MM-dd")';
+        const filtroEntregadasAplicado = @(filtroAplicado ? "true" : "false");
+
+        const inputFechaEntregadas = document.getElementById('inputFechaEntregadas');
+
+        // Al filtrar por fecha la página se recarga: se reabre la pestaña "Entregadas"
+        if (filtroEntregadasAplicado) {
+            const tabEntregadas = document.querySelector('[data-bs-target="#panelEntregadas"]');
+            if (tabEntregadas) bootstrap.Tab.getOrCreateInstance(tabEntregadas).show();
+        }
+
+        inputFechaEntregadas.addEventListener('change', function () {
+            if (inputFechaEntregadas.value) {
+                window.location.href = `${urlMisEntregas}?fecha=${inputFechaEntregadas.value}`;
+            }
+        });
+
+        document.getElementById('btnHoyEntregadas').addEventListener('click', function () {
+            window.location.href = `${urlMisEntregas}?fecha=${hoyEntregadas}`;
+        });
+
+        document.getElementById('btnTodasEntregadas').addEventListener('click', function () {
+            window.location.href = `${urlMisEntregas}?todas=true`;
+        });
+    </script>
+}
