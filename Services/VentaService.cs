@@ -177,7 +177,7 @@ public class VentaService : IVentaService
             return new ResultadoOperacion { Exitoso = false, MensajeError = "Este pedido ya no se puede editar (debe estar Pendiente)." };
         }
 
-        var resultado = await ReemplazarDetallesAsync(venta, detalles);
+        var resultado = await ReemplazarDetallesAsync(venta, detalles, permitirCero: true);
         if (!resultado.Exitoso) return resultado;
 
         venta.FueEditado = true;
@@ -202,7 +202,9 @@ public class VentaService : IVentaService
             return new ResultadoOperacion { Exitoso = false, MensajeError = "Venta no encontrada." };
         }
 
-        if (venta.EstadoId != 1)
+        // Se permite despachar (o re-ajustar el peso) mientras el pedido siga Pendiente (1) o En preparación (2).
+        // En camino, Entregado o Cancelado siguen bloqueados.
+        if (venta.EstadoId != 1 && venta.EstadoId != 2)
         {
             return new ResultadoOperacion { Exitoso = false, MensajeError = "Este pedido ya fue despachado o su estado cambió." };
         }
@@ -331,9 +333,12 @@ public class VentaService : IVentaService
         return new ResultadoOperacion { Exitoso = true };
     }
 
-    private async Task<ResultadoOperacion> ReemplazarDetallesAsync(Venta venta, List<DetalleVentaInputViewModel> detalles)
+    private async Task<ResultadoOperacion> ReemplazarDetallesAsync(Venta venta, List<DetalleVentaInputViewModel> detalles, bool permitirCero = false)
     {
-        if (detalles == null || !detalles.Any(d => d.Cantidad > 0))
+        // Al capturar/editar el pedido se acepta cantidad 0 (peso por definir); al despachar se exige peso real > 0
+        decimal cantidadMinima = permitirCero ? 0m : 0.0001m;
+
+        if (detalles == null || !detalles.Any(d => d.Cantidad >= cantidadMinima))
         {
             return new ResultadoOperacion { Exitoso = false, MensajeError = "El pedido debe tener al menos un producto." };
         }
@@ -344,7 +349,7 @@ public class VentaService : IVentaService
         var nuevosDetalles = new List<DetalleVenta>();
         decimal total = 0;
 
-        foreach (var item in detalles.Where(d => d.Cantidad > 0))
+        foreach (var item in detalles.Where(d => d.Cantidad >= cantidadMinima))
         {
             var producto = await _context.Productos.FindAsync(item.ProductoId);
 
@@ -390,14 +395,14 @@ public class VentaService : IVentaService
 
     private async Task<ResultadoOperacion> ArmarYGuardarVentaAsync(Venta venta, List<DetalleVentaInputViewModel> detalles)
     {
-        if (detalles == null || !detalles.Any(d => d.Cantidad > 0))
+        if (detalles == null || !detalles.Any(d => d.Cantidad >= 0))
         {
             return new ResultadoOperacion { Exitoso = false, MensajeError = "Debes agregar al menos un producto a la venta." };
         }
 
         decimal total = 0;
 
-        foreach (var item in detalles.Where(d => d.Cantidad > 0))
+        foreach (var item in detalles.Where(d => d.Cantidad >= 0))
         {
             var producto = await _context.Productos.FindAsync(item.ProductoId);
             if (producto == null || !producto.Activo || producto.PrecioActual == null)

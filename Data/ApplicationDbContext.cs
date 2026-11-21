@@ -52,7 +52,7 @@ public class ApplicationDbContext : IdentityDbContext<Usuario>
 
         builder.Entity<DetalleVenta>()
             .Property(d => d.Cantidad)
-            .HasPrecision(10, 2);
+            .HasPrecision(10, 4);
 
         builder.Entity<Venta>()
             .Property(v => v.Total)
