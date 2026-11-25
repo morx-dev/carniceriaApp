@@ -5,6 +5,7 @@
     var fechaActual = ViewBag.FechaActual as DateTime?;
     bool todasLasFechas = ViewBag.TodasLasFechas == true;
     bool filtroAplicado = ViewBag.FiltroEntregadasAplicado == true;
+    var nombresCreadores = (Dictionary<string, string>)ViewBag.NombresCreadores;
 }
 
 <div class="container app-page">
@@ -47,7 +48,13 @@
             {
                 <div class="app-card p-3 mb-3">
                     <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
-                        <h5 class="mb-0" style="color: var(--ink);">@(venta.Cliente?.Nombre ?? "Cliente sin nombre")</h5>
+                        <div>
+                            <h5 class="mb-0" style="color: var(--ink);">@(venta.Cliente?.Nombre ?? "Cliente sin nombre")</h5>
+                            <p class="mb-0 small" style="color: var(--ink-soft);">
+                                <i class="bi bi-person"></i> @(nombresCreadores.ContainsKey(venta.UsuarioCreadorId) ? nombresCreadores[venta.UsuarioCreadorId] : "Desconocido")
+                                &middot; <i class="bi bi-calendar3"></i> @venta.FechaCreacion.ToString("dd/MM/yyyy")
+                            </p>
+                        </div>
                         <span class="fw-bold" style="color: var(--sage); font-size: 1.1rem;">Q@(venta.Total.ToString("N2"))</span>
                     </div>
 
@@ -117,7 +124,13 @@
             {
                 <div class="app-card p-3 mb-3">
                     <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
-                        <h5 class="mb-0" style="color: var(--ink);">@(venta.Cliente?.Nombre ?? "Cliente sin nombre")</h5>
+                        <div>
+                            <h5 class="mb-0" style="color: var(--ink);">@(venta.Cliente?.Nombre ?? "Cliente sin nombre")</h5>
+                            <p class="mb-0 small" style="color: var(--ink-soft);">
+                                <i class="bi bi-person"></i> @(nombresCreadores.ContainsKey(venta.UsuarioCreadorId) ? nombresCreadores[venta.UsuarioCreadorId] : "Desconocido")
+                                &middot; <i class="bi bi-calendar3"></i> @venta.FechaCreacion.ToString("dd/MM/yyyy")
+                            </p>
+                        </div>
                         <span class="fw-bold" style="color: var(--sage); font-size: 1.1rem;">Q@(venta.Total.ToString("N2"))</span>
                     </div>
                     <p class="mb-1 small"><strong>Dirección:</strong> @venta.Cliente?.Direccion</p>

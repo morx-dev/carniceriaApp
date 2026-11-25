@@ -167,6 +167,19 @@ public class VentasController : Controller
         ViewBag.FiltroEntregadasAplicado = fecha.HasValue || todas;
 
         ViewBag.Entregadas = entregadas;
+
+        // NUEVO: nombres de los usuarios (CallCenter, etc.) que crearon los pedidos, igual que en "Pedidos pendientes"
+        var nombresCreadores = new Dictionary<string, string>();
+        foreach (var venta in pendientes.Concat(entregadas))
+        {
+            if (!string.IsNullOrEmpty(venta.UsuarioCreadorId) && !nombresCreadores.ContainsKey(venta.UsuarioCreadorId))
+            {
+                var creador = await _userManager.FindByIdAsync(venta.UsuarioCreadorId);
+                nombresCreadores[venta.UsuarioCreadorId] = creador?.NombreCompleto ?? "Desconocido";
+            }
+        }
+        ViewBag.NombresCreadores = nombresCreadores;
+
         return View(pendientes);
     }
 
